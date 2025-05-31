@@ -233,8 +233,8 @@
 
 		printf("(Você tem %i moedas)\n", hero.coins);
 		printf("[1] Sair da loja\n");
-		print("[2] %s - $%i\n", shop[currentFloor].item1Name, shop[currentFloor].item1Priece);
-		print("[3] %s - $%i\n", shop[currentFloor].item2Name, shop[currentFloor].item2Priece);
+		printf("[2] %s - $%i\n", shop[currentFloor].item1Name, shop[currentFloor].item1Priece);
+		printf("[3] %s - $%i\n", shop[currentFloor].item2Name, shop[currentFloor].item2Priece);
 		if(currentFloor > 1)
 			printf("[4] Poção de cura - $5\n");
 		if(currentFloor > 2)
@@ -273,7 +273,7 @@
 						hero.coins -= shop[currentFloor].item2Priece;
 						score += shop[currentFloor].item2Priece / 2;
 					}else
-						fprintf
+						fprintf(stderr,"Impossível realizar a ação.\n");
 					break;
 
 				case 4: // BUYS POTION
@@ -288,7 +288,7 @@
 						fprintf(stderr,"Impossível realizar a ação.\n");
 					break;
 
-				case 4: // BUYS PENDANT
+				case 5: // BUYS PENDANT
 					if (hero.coins >= 15 && currentFloor > 2){
 						printf("Você comprou pingente de vida.\n");
 						hero.coins -= 15;
@@ -738,7 +738,7 @@
 
 		//Coinage: 60 + 30 | S:55/50
 
-		strcpy(monster[15].name, "Xãopai");
+		strcpy(monster[15].name, "XÃOPAI");
 		srand(clock()); monster[15].atk = 1;
 		srand(clock()); monster[15].def = 0;
 	}
@@ -851,7 +851,7 @@
 				// printf("\033[0m\n");
 
 			}else if (in == 1){ 
-				printf("Voc� toma o amuleto para si.\n");
+				printf("Você toma o amuleto para si.\n");
 				printf("Você absorve o poder do amuleto, e consegue sentir a escuridão fluir pelo seu corpo.\n");
 				printf("Você tenta resistir à magia, mas ela te domina e você acaba perdendo sua noção \nda realidade.\n");
 				printf("O que restou de você agora reinará no trono como %c nov%c Xãopai.\n", pronoum, pronoum);
@@ -884,4 +884,121 @@
  	void titleScreen(){
     	//printf("\033[31m");
  		printf("*************************************************************************************\n");
-		printf("                                     BEM-VINDO À\
+		printf("                                     BEM-VINDO À\n");
+					printf("         __  __      _      ____    __  __    ___    ____    ____       _\n");
+		printf("        |  \\/  |    / \\    / ___|  |  \\/  |  / _ \\  |  _ \\  |  _ \\     / \\\n");
+		printf("        | |\\/| |   / _ \\   \\___ \\  | |\\/| | | | | | | |_) | | |_) |   / _ \\\n");
+		printf("        | |  | |  / ___ \\   ___) | | |  | | | |_| | |  _ <  |  _ <   / ___ \\\n");
+		printf("        |_|  |_| /_/   \\_\\ |____/  |_|  |_|  \\___/  |_| \\_\\ |_| \\_\\ /_/   \\_\\\n");
+		printf("                                     by: Paixão\n");
+		printf("*************************************************************************************\n\n");
+		printf("                        Pressione qualquer tecla para cotinuar...\n");
+		getchar();
+		system("cls");
+	}
+
+	void showsInfo(int monsterCode){
+ 		printf("|%s|\n", hero.name);
+		printf("Saúde: %i/%i\n", hero.hp, hero.maxHp);
+		printf("Moedas: %i\n", hero.coins);
+		printf("Pontos de ataque: %i(%s)\n", hero.atk, hero.atkItem);
+		printf("Pontos de defesa: %i(%s)\n", hero.def, hero.defItem);
+
+		if (monsterCode > 0){
+			printf("|%s|\n", monster[monsterCode].name);
+			printf("Saúde: %i/%i\n", monster[monsterCode].hp, monster[monsterCode].maxHp);
+			printf("Pontos de ataque: %i\n", monster[monsterCode].atk);
+			if (monsterCode == XAOPAI)
+				printf("Pontos de ataque: %i (dano mágico)\n", monster[monsterCode].atk);
+			else
+				printf("Pontos de ataque: %i\n", monster[monsterCode].atk);
+			printf("Pontos de defesa: %i\n", monster[monsterCode].def);
+		} 
+	}
+
+	
+ 	int showHighscores(){
+        int input;
+        system("cls");
+        //printf("\033[33m");
+        printf("          - HIGH SCORES -          \n");
+
+        for (int i = 0; i < HIGHSCORES_NUM - 1; ++i)
+            if (highscores[i] != 0)
+                printf("              %2i - %i\n", i + 1, highscores[i]);
+
+        //printf("\033[0m");
+        printf("\n         (1) Jogar novamente\n");
+        printf("         (2) Sair do jogo\n");
+
+        do{
+            scanf("%i", &input);
+            switch(input){
+                case 1:
+                    return 1;
+                    break;
+                case 2:
+                    return 0;
+                    break;
+                case 10:
+                	pronoum = 'e';
+                	printf("?\n");
+                	break;
+                case 11:
+                	pronoum = 'o';
+                	printf("\11\n");
+                	break;
+                case 12:
+                	pronoum = 'a';
+                	printf("\12\n");
+                	break;
+                default:
+                	fprintf(stderr,"Comando não encontrado.\n");
+                    break;
+            }
+        }while(input != 1 && input != 2);
+    }
+
+    void updatesHighscores(){
+        FILE *file;
+
+        file = fopen("Highscores.bin", "rb+");
+
+        // 1st time playing
+        if (file == NULL) {
+            file = fopen("Highscores.bin", "wb+");
+            if (file == NULL) {
+                perror("Error opening file");
+                return;
+            }
+        } else {
+            fread(highscores, sizeof(int), HIGHSCORES_NUM, file);
+            fclose(file);
+        }
+
+        highscores[HIGHSCORES_NUM - 1] = score;
+
+        sortHighscores(highscores);
+
+        file = fopen("Highscores.bin", "wb");
+        if (file == NULL) {
+            perror("Error opening file");
+            return;
+        }
+
+        fwrite(highscores, sizeof(int), HIGHSCORES_NUM, file);
+        fclose(file);
+    }
+
+    void sortHighscores() {
+        for (int i = 0; i < HIGHSCORES_NUM - 1; i++) {
+            for (int j = 0; j < HIGHSCORES_NUM - i - 1; j++) {
+                if (highscores[j] < highscores[j + 1]) {
+                    // Swap the elements if they are in the wrong order
+                    int temp = highscores[j];
+                    highscores[j] = highscores[j + 1];
+                    highscores[j + 1] = temp;
+                }
+            }
+        }
+    }
