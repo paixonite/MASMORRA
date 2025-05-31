@@ -892,7 +892,7 @@
 		printf("        |_|  |_| /_/   \\_\\ |____/  |_|  |_|  \\___/  |_| \\_\\ |_| \\_\\ /_/   \\_\\\n");
 		printf("                                     by: Paixão\n");
 		printf("*************************************************************************************\n\n");
-		printf("                        Pressione qualquer tecla para cotinuar...\n");
+		printf("                            Pressione enter para cotinuar...\n");
 		getchar();
 		system("cls");
 	}
