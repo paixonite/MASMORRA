@@ -140,11 +140,11 @@
 			dungeonDialog();
 
 			if (iterationCounter == 0){
-					printf("Lojista: Você deve ser nov%c por aqui. Qual seu nome, viajante?\n", pronoum);
+					printf("Lojista: Voc� deve ser nov%c por aqui. Qual seu nome, viajante?\n", pronoum);
 				while(1){
        				scanf("%29[^\n]", hero.name);
        				if (strcmp(hero.name, "0") == 0)
-       					printf("Agora não, burr%c!\n", pronoum);
+       					printf("Agora n�o, burr%c!\n", pronoum);
        				else if (strcmp(hero.name, "root") == 0){
        					hero.atk = 999;
        					printf("Unlimited power!");
@@ -216,7 +216,7 @@
 						break;
 
 					default: // ERROR
-						fprintf(stderr,"Comando não encontrado.\n");
+						fprintf(stderr,"Comando n�o encontrado.\n");
 						break;
 				}
 			}while((in != 1) && (in != 3));
@@ -231,12 +231,12 @@
 		bool item1Avaible = true; // Disponibilidade do item 1
 		bool item2Avaible = true; // Disponibilidade do item 2
 
-		printf("(Você tem %i moedas)\n", hero.coins);
+		printf("(Voc� tem %i moedas)\n", hero.coins);
 		printf("[1] Sair da loja\n");
-		print("[2] %s - $%i\n", shop[currentFloor].item1Name, shop[currentFloor].item1Priece);
-		print("[3] %s - $%i\n", shop[currentFloor].item2Name, shop[currentFloor].item2Priece);
+		printf("[2] %s - $%i\n", shop[currentFloor].item1Name, shop[currentFloor].item1Priece);
+		printf("[3] %s - $%i\n", shop[currentFloor].item2Name, shop[currentFloor].item2Priece);
 		if(currentFloor > 1)
-			printf("[4] Poção de cura - $5\n");
+			printf("[4] Po��o de cura - $5\n");
 		if(currentFloor > 2)
 			printf("[5] Pingente de vida - $15\n");
 
@@ -254,60 +254,60 @@
 					if ((item1Avaible == true) && (hero.coins >= shop[currentFloor].item1Priece))
 					{
 						strcpy(hero.atkItem, shop[currentFloor].item1Name);
-						printf("Você comprou %s.\n", shop[currentFloor].item1Name);
+						printf("Voc� comprou %s.\n", shop[currentFloor].item1Name);
 						hero.atk = shop[currentFloor].item1atkPoints;
 						item1Avaible = false;
 						hero.coins -= shop[currentFloor].item1Priece;
 						score += shop[currentFloor].item1Priece / 2;
 					}else
-						fprintf(stderr,"Impossível realizar a ação.\n");
+						fprintf(stderr,"Imposs�vel realizar a a��o.\n");
 					break;
 
 				case 3: // BUYS ITEM 2
 					if ((item2Avaible == true) && (hero.coins >= shop[currentFloor].item2Priece))
 					{
 						strcpy(hero.defItem, shop[currentFloor].item2Name);
-						printf("Você comprou %s.\n", shop[currentFloor].item2Name);
+						printf("Voc� comprou %s.\n", shop[currentFloor].item2Name);
 						hero.def = shop[currentFloor].item2defPoints;
 						item2Avaible = false;
 						hero.coins -= shop[currentFloor].item2Priece;
 						score += shop[currentFloor].item2Priece / 2;
 					}else
-						fprintf
+						fprintf(stderr,"Imposs�vel realizar a a��o.\n");
 					break;
 
 				case 4: // BUYS POTION
 					if ((hero.coins >= 5) && (hero.hp < hero.maxHp) && (currentFloor > 1)){
-						printf("Você comprou poção de cura.\n");
+						printf("Voc� comprou po��o de cura.\n");
 						hero.hp += 8;
 						hero.coins -= 5;
 						score += 5;
 						if (hero.hp > hero.maxHp)
 							hero.hp = hero.maxHp;
 					}else if (currentFloor > 1)
-						fprintf(stderr,"Impossível realizar a ação.\n");
+						fprintf(stderr,"Imposs�vel realizar a a��o.\n");
 					break;
 
-				case 4: // BUYS PENDANT
+				case 5: // BUYS PENDANT
 					if (hero.coins >= 15 && currentFloor > 2){
-						printf("Você comprou pingente de vida.\n");
+						printf("Voc� comprou pingente de vida.\n");
 						hero.coins -= 15;
 						hero.maxHp += 5;
 						hero.hp += 5;
 						score += 15;
 					}else if (currentFloor > 2)
-						fprintf(stderr, "Impossível realizar a ação.\n");
+						fprintf(stderr, "Imposs�vel realizar a a��o.\n");
 					break;
 
 				default: // ERROR
-					fprintf(stderr,"Comando não encontrado.\n");
+					fprintf(stderr,"Comando n�o encontrado.\n");
 					break;
 			}
 		}while(in != 1);
 	}
 
 	bool monsterInteraction(int monsterCode){
-		printf("Você encontrou %s!\n",monster[monsterCode].name);
+		printf("Voc� encontrou %s!\n",monster[monsterCode].name);
 		printf("[1] Atacar \n");
 		monster[monsterCode].hp = monster[monsterCode].maxHp;
 		do{
@@ -322,8 +322,8 @@
 					case 1: // ATTACK
 						if (monster[monsterCode].def >= hero.atk){
 							system("cls");
-							printf("VOCÊ MORREU DE PARADA CARDÍACA AO VER %s NO PISO %i\n\7",monster[monsterCode].name,currentFloor);
-							printf("Pontuação: %i\n",score);
+							printf("VOC� MORREU DE PARADA CARD�ACA AO VER %s NO PISO %i\n\7",monster[monsterCode].name,currentFloor);
+							printf("Pontua��o: %i\n",score);
 							return true;
 						}
 						else
@@ -331,7 +331,7 @@
 						break;
 
 					default: //ERROR
-						fprintf(stderr,"Comando não encontrado.\n");
+						fprintf(stderr,"Comando n�o encontrado.\n");
 						break;
 				}
 			}while(in != 1);
@@ -341,8 +341,8 @@
 				if (hero.hp <= 0)
 				{
 				system("cls");
-				printf("VOCÊ MORREU PARA %s NO PISO %i\n\7",monster[monsterCode].name,currentFloor);
-				printf("Pontuação: %i\n",score);
+				printf("VOC� MORREU PARA %s NO PISO %i\n\7",monster[monsterCode].name,currentFloor);
+				printf("Pontua��o: %i\n",score);
 				return true;
 				}else{
 				printf("%s: %i/%i\n", hero.name, hero.hp, hero.maxHp);
@@ -352,8 +352,8 @@
 		}while(monster[monsterCode].hp > 0);
 		score += 10;
 		hero.coins += monster[monsterCode].coins;
-		printf("Você derrotou %s.\n", monster[monsterCode].name);
-		printf("Você encontrou %i moedas!\n\n", monster[monsterCode].coins);
+		printf("Voc� derrotou %s.\n", monster[monsterCode].name);
+		printf("Voc� encontrou %i moedas!\n\n", monster[monsterCode].coins);
 		return false;
 	}
 
@@ -364,7 +364,7 @@
 		{
 			enemy_t chest;
 			bool run;
-			printf("Você encontrou um baú!\n");
+			printf("Voc� encontrou um ba�!\n");
 			printf("[1] Chutar violentamente\n");
 			printf("[2] Ignorar\n");
 
@@ -373,7 +373,7 @@
 				switch(in){
 					case 0:
 						showsInfo(-1);
-						printf("|Baú|\n");
+						printf("|Ba�|\n");
 						printf(" ???\n");
 						break;
 
@@ -386,14 +386,14 @@
 						break;
 
 					default:
-						fprintf(stderr, "Comando não encontrado.\n");
+						fprintf(stderr, "Comando n�o encontrado.\n");
 						break;
 				}
 			}while(in != 1 && in != 2);
 
 			// 1/3 chance for it being a mimic
 			if (rand() % 3 == 0 && !run){
-				strcpy(chest.name, "Mímico");
+				strcpy(chest.name, "M�mico");
 				switch(currentFloor){
 					case 1:
 						chest.maxHp = rand() % 3 + 4;
@@ -415,7 +415,7 @@
 				chest.hp = chest.maxHp;
 				chest.coins = rand() % (5 * currentFloor) + 5;
 
-				printf("O Baú era um mímico!\n");
+				printf("O Ba� era um m�mico!\n");
 				printf("[1]Atacar\n");
 
 				do{
@@ -431,7 +431,7 @@
 								break;
 
 							default:
-								fprintf(stderr, "Comando não encontrado.\n");
+								fprintf(stderr, "Comando n�o encontrado.\n");
 								break;
 						}
 					}while(in != 1);
@@ -440,8 +440,8 @@
 							hero.hp -= (chest.atk - hero.def);
 						if (hero.hp <= 0){
 							system("cls");
-							printf("VOCÊ MORREU PARA %s NO PISO %i\n\7", chest.name, currentFloor);
-							printf("Pontuação: %i\n", score);
+							printf("VOC� MORREU PARA %s NO PISO %i\n\7", chest.name, currentFloor);
+							printf("Pontua��o: %i\n", score);
 							return true;
 						}else{
 							printf("%s: %i/%i\n", hero.name, hero.hp, hero.maxHp);
@@ -451,8 +451,8 @@
 				}while(chest.hp > 0);
 				score += chest.coins;
 				hero.coins += chest.coins;
-				printf("Você derrotou %s.\n", chest.name);
-				printf("Você encontrou %d moedas!\n", chest.coins);
+				printf("Voc� derrotou %s.\n", chest.name);
+				printf("Voc� encontrou %d moedas!\n", chest.coins);
 
 			// 2/3 chance for it to be a chest
 			} else if (!run){
@@ -460,7 +460,7 @@
 				chest.hp = chest.maxHp;
 				chest.coins = rand() % (5 * currentFloor) + 5;
 
-				printf("Você chuta o baú para tentar abri-lo\n");
+				printf("Voc� chuta o ba� para tentar abri-lo\n");
 				printf("[1] Chutar\n");
 				do{
 					do{
@@ -475,23 +475,23 @@
 								break;
 
 							default:
-								fprintf(stderr, "Comando não encontrado.\n");
+								fprintf(stderr, "Comando n�o encontrado.\n");
 								break;
 						}
 					}while(in != 1);
 					if (chest.hp > 0)
-						printf("Baú: %i/%i\n", chest.hp, chest.maxHp);
+						printf("Ba�: %i/%i\n", chest.hp, chest.maxHp);
 				}while(chest.hp > 0);
 				score += chest.coins;
 				hero.coins += chest.coins;
-				printf("Você cuidadosamente abre o baú.\n");
-				printf("Você encontrou %d moedas!\n", chest.coins);
+				printf("Voc� cuidadosamente abre o ba�.\n");
+				printf("Voc� encontrou %d moedas!\n", chest.coins);
 
 			}
 			// displays secret number on the first chest
 			if (*chestOpened == false && !run){
 					secretNumber = rand() % 900 + 100;
-					printf("Você encontra uma marcação suspeita gravada no fundo do baú: %i\n", secretNumber);
+					printf("Voc� encontra uma marca��o suspeita gravada no fundo do ba�: %i\n", secretNumber);
 					*chestOpened = true;
 			}
 		}
@@ -507,38 +507,38 @@
     void shopDialog(){
  		switch (currentFloor){
  			case 0:
- 				printf("\nLojista: Então você quer se aventurar pela terrível masmorra, %s?\n",hero.name);
-				printf("Se fosse você eu não iria de mãos atadas...\n");
+ 				printf("\nLojista: Ent�o voc� quer se aventurar pela terr�vel masmorra, %s?\n",hero.name);
+				printf("Se fosse voc� eu n�o iria de m�os atadas...\n");
  				break;
 
  			case 1:
- 				printf("\nVocê encontra uma vendedor ambulante, carregando itens em seu carro de mão.\n");
-				printf("Vendedor ambulante: O que estou fazendo aqui? Ah, é só um passeio de negócios.\n");
-				printf("Você acabou de matar potenciais compradores. Você devia cobrir meu prejuízo...\n");
+ 				printf("\nVoc� encontra uma vendedor ambulante, carregando itens em seu carro de m�o.\n");
+				printf("Vendedor ambulante: O que estou fazendo aqui? Ah, � s� um passeio de neg�cios.\n");
+				printf("Voc� acabou de matar potenciais compradores. Voc� devia cobrir meu preju�zo...\n");
  				break;
 
  			case 2:
- 				printf("\nVocê encontra uma pequena venda de um goblin morador local.\n");
-				printf("Lojista goblin: Levar o que quiser, só por favor não me matar!\n");
-				printf("(Seu código moral te impede de sair sem pagar)\n");
+ 				printf("\nVoc� encontra uma pequena venda de um goblin morador local.\n");
+				printf("Lojista goblin: Levar o que quiser, s� por favor n�o me matar!\n");
+				printf("(Seu c�digo moral te impede de sair sem pagar)\n");
  				break;
 
  			case 3:
- 				printf("\nVocê encontra uma troll ferreiro, forjando ferramentas com os minérios.\n");
+ 				printf("\nVoc� encontra uma troll ferreiro, forjando ferramentas com os min�rios.\n");
 				printf("Ferreiro: Um humano nesse lugar? Coisa rara de se ver...\n");
 				printf("Posso te dar umas lembrancinhas em troca dessas moedas de ouro.\n");
  				break;
 
  			case 4:
  				printf("\nUm misterioso ser encapuzado aparece das sombras.\n");
-				printf("Ser misterioso: Então é você %c corajos%c %s que busca derrotar o grande Xãopai?\n", pronoum, pronoum, hero.name);
-				printf("Tenha cautela, jovem guerreir%c. O caminho a seguir pode ser perigoso e traiçoeiro.\n\n", pronoum);
+				printf("Ser misterioso: Ent�o � voc� %c corajos%c %s que busca derrotar o grande X�opai?\n", pronoum, pronoum, hero.name);
+				printf("Tenha cautela, jovem guerreir%c. O caminho a seguir pode ser perigoso e trai�oeiro.\n\n", pronoum);
  				break;
 
  			case 5:
- 				printf("\nVocê encontra uma hedionda figura de carne e tentáculos.\n");
-				printf("Criatura: (A criatura encara até os mais obscuros cantos da sua alma)\n");
-				printf("(Você se sente extremamente desconfortável enquanto compra)\n");
+ 				printf("\nVoc� encontra uma hedionda figura de carne e tent�culos.\n");
+				printf("Criatura: (A criatura encara at� os mais obscuros cantos da sua alma)\n");
+				printf("(Voc� se sente extremamente desconfort�vel enquanto compra)\n");
  				break;
  		}
  	}
@@ -547,54 +547,54 @@
  		switch (currentFloor){
  			case 0:
  				printf("+-------------------------------------------------------------------------+\n");
- 				printf("|DICA: Digite '0' a qualquer momento para mostrar status do herói/oponente|\n");
+ 				printf("|DICA: Digite '0' a qualquer momento para mostrar status do her�i/oponente|\n");
  				printf("+-------------------------------------------------------------------------+\n");
- 				printf("Diversos aventureiros da cidade acima adentraram a masmorra antes de você, mas \npoucos foram vistos novamente.");
-				printf(" Diz-se que um mal ancestral espreita nas \nprofundezas, o imensamente poderoso espírito Xãopai.\n\n");
-				printf("Antes de começar sua aventura, você entra em uma loja.\n");
+ 				printf("Diversos aventureiros da cidade acima adentraram a masmorra antes de voc�, mas \npoucos foram vistos novamente.");
+				printf(" Diz-se que um mal ancestral espreita nas \nprofundezas, o imensamente poderoso esp�rito X�opai.\n\n");
+				printf("Antes de come�ar sua aventura, voc� entra em uma loja.\n");
  				break;
 
  			case 1:
  				printf("|PISO %i|\n", currentFloor);
-				printf("Você desce as escadarias da masmorra, entrando no sistema de esgoto da cidade.\n");
-				printf("As criaturas, antes inofensivas, se tornaram ferozes com a influência maligna \nvinda das profundezas.\n\n");
+				printf("Voc� desce as escadarias da masmorra, entrando no sistema de esgoto da cidade.\n");
+				printf("As criaturas, antes inofensivas, se tornaram ferozes com a influ�ncia maligna \nvinda das profundezas.\n\n");
  				break;
  				
  			case 2:
  				printf("|PISO %i|\n", currentFloor);
-				printf("Você desce as escadarias da masmorra, entrando em uma prisão antiga a muito tempo \nabandonada.");
-				printf(" Esta prisão costumava abrigar os mais perigosos criminosos, mas a \ninfluência ");
+				printf("Voc� desce as escadarias da masmorra, entrando em uma pris�o antiga a muito tempo \nabandonada.");
+				printf(" Esta pris�o costumava abrigar os mais perigosos criminosos, mas a \ninflu�ncia ");
 			    printf("corrompeu as mentes dos guardas e dos prisioneiros.\n\n");
  				break;
  				
  			case 3:
  				printf("|PISO %i|\n", currentFloor);
-				printf("Você desce as escadarias da masmorra, entrando em uma caverna escura e rica em \nminério.");
-				printf(" Uma vez foi um grande centro comercial habitada por anões, mas foi \nabandonada com a vinda da pestilência.\n\n");
+				printf("Voc� desce as escadarias da masmorra, entrando em uma caverna escura e rica em \nmin�rio.");
+				printf(" Uma vez foi um grande centro comercial habitada por an�es, mas foi \nabandonada com a vinda da pestil�ncia.\n\n");
  				break;
  				
  			case 4:
  				printf("|PISO %i|\n", currentFloor);
-				printf("Você desce as escadarias da masmorra, entrando na antiga metrópole do reino dos \nanões, hoje em ruínas.");
-				printf(" Contam as histórias que a povoada capital sucumbiu súbitamente \ncom a chegada de um enorme mal.\n\n");
+				printf("Voc� desce as escadarias da masmorra, entrando na antiga metr�pole do reino dos \nan�es, hoje em ru�nas.");
+				printf(" Contam as hist�rias que a povoada capital sucumbiu s�bitamente \ncom a chegada de um enorme mal.\n\n");
  				break;
  				
  			case 5:
  				printf("|PISO %i|\n", currentFloor);
-				printf("Você desce as escadarias da masmorra, chegando escaldantes corredores dos salões \ndemoniacos.");
-				printf(" Você pode sentir uma poderosa aura sombria no ar...\n\n");
+				printf("Voc� desce as escadarias da masmorra, chegando escaldantes corredores dos sal�es \ndemoniacos.");
+				printf(" Voc� pode sentir uma poderosa aura sombria no ar...\n\n");
  				break;
 
  			case 6:
- 				printf("|TEMPLO DE XÃOPAI|\n");
-				printf("Você desce as escadarias da masmorra, chegando finalmente ao trono do todo poderoso \nXãopai. ");
-				printf("Você sente como se fosse passar por uns maus tempos.\n\n");
+ 				printf("|TEMPLO DE X�OPAI|\n");
+				printf("Voc� desce as escadarias da masmorra, chegando finalmente ao trono do todo poderoso \nX�opai. ");
+				printf("Voc� sente como se fosse passar por uns maus tempos.\n\n");
  				break;
  		}					
  	}
 
  	void setsShopInfo(shop_t *shop){
-		strcpy(shop[0].item1Name,"Bastão de madeira");
+		strcpy(shop[0].item1Name,"Bast�o de madeira");
 		shop[0].item1atkPoints = 2;
 		shop[0].item1Priece = 10;
 		strcpy(shop[0].item2Name,"Escudo pequeno de madeira");
@@ -615,10 +615,10 @@
 		shop[2].item2defPoints = 3;
 		shop[2].item2Priece = 20;
 
-		strcpy(shop[3].item1Name,"Espada longa de aço");
+		strcpy(shop[3].item1Name,"Espada longa de a�o");
 		shop[3].item1atkPoints = 5;
 		shop[3].item1Priece = 30;
-		strcpy(shop[3].item2Name,"Escudo grande de aço");
+		strcpy(shop[3].item2Name,"Escudo grande de a�o");
 		shop[3].item2defPoints = 4;
 		shop[3].item2Priece = 30;
 
@@ -629,10 +629,10 @@
 		shop[4].item2defPoints = 5;
 		shop[4].item2Priece = 40;
 
-		strcpy(shop[5].item1Name,"Excalibur Lendária");
+		strcpy(shop[5].item1Name,"Excalibur Lend�ria");
 		shop[5].item1atkPoints = 8;
 		shop[5].item1Priece = 55;
-		strcpy(shop[5].item2Name,"Égide Mítica");
+		strcpy(shop[5].item2Name,"�gide M�tica");
 		shop[5].item2defPoints = 15;
 		shop[5].item2Priece = 50;
  	}
@@ -658,7 +658,7 @@
 
 		//Coinage: 15 + 15 | S:15
 
-		strcpy(monster[3].name, "Ladrão louco");
+		strcpy(monster[3].name, "Ladr�o louco");
 		srand(clock()); monster[3].maxHp = rand() % 2 + 3;
 		srand(clock()); monster[3].atk = rand() % 3 + 2;
 		srand(clock()); monster[3].def = rand() % 2 + 0;
@@ -670,7 +670,7 @@
 		srand(clock()); monster[4].def = rand() % 2 + 0;
 		srand(clock()); monster[4].coins = rand() % 5 + 7;
 
-		strcpy(monster[5].name, "Guarda da prisão");
+		strcpy(monster[5].name, "Guarda da pris�o");
 		srand(clock()); monster[5].maxHp  = rand() % 2 + 3;
 		srand(clock()); monster[5].atk = rand() % 2 + 3;
 		srand(clock()); monster[5].def = rand() % 2 + 0;
@@ -698,19 +698,19 @@
 
 		//Coinage: 30 + 15 | S:30
 
-		strcpy(monster[9].name, "Soldado anão");
+		strcpy(monster[9].name, "Soldado an�o");
 		srand(clock()); monster[9].maxHp = rand() % 2 + 6;
 		srand(clock()); monster[9].atk = rand() % 3 + 4;
 		srand(clock()); monster[9].def = rand() % 2 + 1;
 		srand(clock()); monster[9].coins = rand() % 6 + 13;
 
-		strcpy(monster[10].name, "Monge anão");
+		strcpy(monster[10].name, "Monge an�o");
 		srand(clock()); monster[10].maxHp = rand() % 2 + 4;
 		srand(clock()); monster[10].atk = rand() % 2 + 5;
 		srand(clock()); monster[10].def = rand() % 1 + 3;
 		srand(clock()); monster[10].coins = rand() % 7 + 13;
 
-		strcpy(monster[11].name, "Bruxo anão");
+		strcpy(monster[11].name, "Bruxo an�o");
 		srand(clock()); monster[11].maxHp = rand() % 2 + 3;
 		srand(clock()); monster[11].atk = rand() % 3 + 5;
 		srand(clock()); monster[11].def = rand() % 1 + 3;
@@ -718,7 +718,7 @@
 
 		//Coinage: 40 + 20 | S:40
 
-		strcpy(monster[12].name, "Demônio estripador");
+		strcpy(monster[12].name, "Dem�nio estripador");
 		srand(clock()); monster[12].maxHp = rand() % 2 + 7;
 		srand(clock()); monster[12].atk = rand() % 2 + 6;
 		srand(clock()); monster[12].def = rand() % 3 + 2;
@@ -730,7 +730,7 @@
 		srand(clock()); monster[13].def = rand() % 3 + 2;
 		srand(clock()); monster[13].coins = rand() % 10 + 20;
 
-		strcpy(monster[14].name, "Cão demoníaco");
+		strcpy(monster[14].name, "C�o demon�aco");
 		srand(clock()); monster[14].maxHp = rand() % 2 + 8;
 		srand(clock()); monster[14].atk = rand() % 2 + 6;
 		srand(clock()); monster[14].def = rand() % 2 + 3;
@@ -738,7 +738,7 @@
 
 		//Coinage: 60 + 30 | S:55/50
 
-		strcpy(monster[15].name, "Xãopai");
+		strcpy(monster[15].name, "X�OPAI");
 		srand(clock()); monster[15].atk = 1;
 		srand(clock()); monster[15].def = 0;
 	}
@@ -774,11 +774,11 @@
 		printf("            \\   \\__, \\_     '~'     _/ .__/   /\n");		
 		printf("             `-._,-'   `-._______.-'   `-._,-'\n\n");	
 		//printf("\033[0m");
-		printf("Xãopai: ABLUBLUBÊ ABLAUBLUBLÊ! EU COMER %s!\n", hero.name);	
+		printf("X�opai: ABLUBLUB� ABLAUBLUBL�! EU COMER %s!\n", hero.name);	
     }
 
     bool xaopaiInteraction(){
-		printf("Você desafia o terrível Xãopai!\n");
+		printf("Voc� desafia o terr�vel X�opai!\n");
 		printf("[1] Atacar \n");
 		monster[XAOPAI].hp = monster[XAOPAI].maxHp;
 		do{
@@ -794,7 +794,7 @@
 						break;
 
 					default: //ERROR
-						fprintf(stderr, "Comando não encontrado.\n");
+						fprintf(stderr, "Comando n�o encontrado.\n");
 						break;
 				}
 			}while(in != 1);
@@ -802,28 +802,28 @@
 				hero.hp -= monster[XAOPAI].atk;
 				if (hero.hp <= 0){
 				system("cls");
-				printf("VOCÊ PERECEU DIANTE DE XÃOPAI.\n\7");
-				printf("Pontuação: %i\n", score);
+				printf("VOC� PERECEU DIANTE DE X�OPAI.\n\7");
+				printf("Pontua��o: %i\n", score);
 				return true;
 				}else{
 				printf("%s: %i/%i\n", hero.name, hero.hp, hero.maxHp);
-				printf("XÃOPAI: %i/%i\n", monster[XAOPAI].hp, monster[XAOPAI].maxHp);
+				printf("X�OPAI: %i/%i\n", monster[XAOPAI].hp, monster[XAOPAI].maxHp);
 				}
 			}		
 		}while(monster[XAOPAI].hp > 0);
 		score += 1000;
-		printf("VOCÊ DERROTOU O ESPÍRITO DE XÃOPAI!\n\n");
+		printf("VOC� DERROTOU O ESP�RITO DE X�OPAI!\n\n");
 		return false;
 	}
 
     void ending(){
- 		printf("Você atravessa a fera com a sua espada e ela é reduzida à poeira e cinzas.\n");
-		printf("Você apanha um amuleto vermelho-sangue em meio aos restos da criatura\n");
-		printf("O amuleto pulsa vigorosamente em suas mãos. Você pode sentir um imenso poder \nsaindo dele.\n");
-		printf("O que você faz?\n");
+ 		printf("Voc� atravessa a fera com a sua espada e ela � reduzida � poeira e cinzas.\n");
+		printf("Voc� apanha um amuleto vermelho-sangue em meio aos restos da criatura\n");
+		printf("O amuleto pulsa vigorosamente em suas m�os. Voc� pode sentir um imenso poder \nsaindo dele.\n");
+		printf("O que voc� faz?\n");
 		printf("[0] Inspeciona\n");
-		printf("[1] Se apossar da amuleto de Xãopai\n");
-		printf("[2] Destruir o amuleto de Xãopai\n");
+		printf("[1] Se apossar da amuleto de X�opai\n");
+		printf("[2] Destruir o amuleto de X�opai\n");
 
 		while(1){
 
@@ -852,24 +852,24 @@
 
 			}else if (in == 1){ 
 				printf("Voc� toma o amuleto para si.\n");
-				printf("Você absorve o poder do amuleto, e consegue sentir a escuridão fluir pelo seu corpo.\n");
-				printf("Você tenta resistir à magia, mas ela te domina e você acaba perdendo sua noção \nda realidade.\n");
-				printf("O que restou de você agora reinará no trono como %c nov%c Xãopai.\n", pronoum, pronoum);
+				printf("Voc� absorve o poder do amuleto, e consegue sentir a escurid�o fluir pelo seu corpo.\n");
+				printf("Voc� tenta resistir � magia, mas ela te domina e voc� acaba perdendo sua no��o \nda realidade.\n");
+				printf("O que restou de voc� agora reinar� no trono como %c nov%c X�opai.\n", pronoum, pronoum);
 				printf("|FINAL RUIM|\n");
 				break;
 
 			}else if (in == 2){ 
-				printf("Você destrói o amuleto.\n");
-				printf("Você ouve um estridente ruído vindo do amuleto enquanto vê toda a energia maligna \nse dissipar no ar.\n");
-				printf("Você finalmente libertou a masmorra e os habitantes da cidade das \nmãos do mau!\n");
+				printf("Voc� destr�i o amuleto.\n");
+				printf("Voc� ouve um estridente ru�do vindo do amuleto enquanto v� toda a energia maligna \nse dissipar no ar.\n");
+				printf("Voc� finalmente libertou a masmorra e os habitantes da cidade das \nm�os do mau!\n");
 				printf("|FINAL BOM|\n");
 				break;
 
 			}else if (in == secretNumber){ 
-				printf("Você recita a sequência mágica ao amuleto.\n");
+				printf("Voc� recita a sequ�ncia m�gica ao amuleto.\n");
 				printf("O amuleto brilha em luz vermelha ofuscante enquanto muda sua forma para um esbelto garoto.\n");
-				printf("Paixão: Uh... Onde eu estou? Eu estava programando um jogo e... acho dormi no teclado.\n");
-				printf("Paixão: Vem, %s, vamo dar um fora daqui. Ficar encarando essa tela de terminal \ntá me dando dor de cabeça...\n",hero.name);
+				printf("Paix�o: Uh... Onde eu estou? Eu estava programando um jogo e... acho dormi no teclado.\n");
+				printf("Paix�o: Vem, %s, vamo dar um fora daqui. Ficar encarando essa tela de terminal \nt� me dando dor de cabe�a...\n",hero.name);
 				printf("|FINAL VERDADEIRO|\n");
 				break;
 
@@ -878,10 +878,127 @@
 			}else 
 				printf("Nada acontece...\n");
 		}
-		printf("Pontuação: %i\n\n", score);
+		printf("Pontua��o: %i\n\n", score);
  	}
 
  	void titleScreen(){
     	//printf("\033[31m");
  		printf("*************************************************************************************\n");
-		printf("                                     BEM-VINDO À\
+		printf("                                     BEM-VINDO �\n");
+					printf("         __  __      _      ____    __  __    ___    ____    ____       _\n");
+		printf("        |  \\/  |    / \\    / ___|  |  \\/  |  / _ \\  |  _ \\  |  _ \\     / \\\n");
+		printf("        | |\\/| |   / _ \\   \\___ \\  | |\\/| | | | | | | |_) | | |_) |   / _ \\\n");
+		printf("        | |  | |  / ___ \\   ___) | | |  | | | |_| | |  _ <  |  _ <   / ___ \\\n");
+		printf("        |_|  |_| /_/   \\_\\ |____/  |_|  |_|  \\___/  |_| \\_\\ |_| \\_\\ /_/   \\_\\\n");
+		printf("                                     by: Paix�o\n");
+		printf("*************************************************************************************\n\n");
+		printf("                            Pressione enter para cotinuar...\n");
+		getchar();
+		system("cls");
+	}
+
+	void showsInfo(int monsterCode){
+ 		printf("|%s|\n", hero.name);
+		printf("Sa�de: %i/%i\n", hero.hp, hero.maxHp);
+		printf("Moedas: %i\n", hero.coins);
+		printf("Pontos de ataque: %i(%s)\n", hero.atk, hero.atkItem);
+		printf("Pontos de defesa: %i(%s)\n", hero.def, hero.defItem);
+
+		if (monsterCode > 0){
+			printf("|%s|\n", monster[monsterCode].name);
+			printf("Sa�de: %i/%i\n", monster[monsterCode].hp, monster[monsterCode].maxHp);
+			printf("Pontos de ataque: %i\n", monster[monsterCode].atk);
+			if (monsterCode == XAOPAI)
+				printf("Pontos de ataque: %i (dano m�gico)\n", monster[monsterCode].atk);
+			else
+				printf("Pontos de ataque: %i\n", monster[monsterCode].atk);
+			printf("Pontos de defesa: %i\n", monster[monsterCode].def);
+		} 
+	}
+
+	
+ 	int showHighscores(){
+        int input;
+        system("cls");
+        //printf("\033[33m");
+        printf("          - HIGH SCORES -          \n");
+
+        for (int i = 0; i < HIGHSCORES_NUM - 1; ++i)
+            if (highscores[i] != 0)
+                printf("              %2i - %i\n", i + 1, highscores[i]);
+
+        //printf("\033[0m");
+        printf("\n         (1) Jogar novamente\n");
+        printf("         (2) Sair do jogo\n");
+
+        do{
+            scanf("%i", &input);
+            switch(input){
+                case 1:
+                    return 1;
+                    break;
+                case 2:
+                    return 0;
+                    break;
+                case 10:
+                	pronoum = 'e';
+                	printf("?\n");
+                	break;
+                case 11:
+                	pronoum = 'o';
+                	printf("\11\n");
+                	break;
+                case 12:
+                	pronoum = 'a';
+                	printf("\12\n");
+                	break;
+                default:
+                	fprintf(stderr,"Comando n�o encontrado.\n");
+                    break;
+            }
+        }while(input != 1 && input != 2);
+    }
+
+    void updatesHighscores(){
+        FILE *file;
+
+        file = fopen("Highscores.bin", "rb+");
+
+        // 1st time playing
+        if (file == NULL) {
+            file = fopen("Highscores.bin", "wb+");
+            if (file == NULL) {
+                perror("Error opening file");
+                return;
+            }
+        } else {
+            fread(highscores, sizeof(int), HIGHSCORES_NUM, file);
+            fclose(file);
+        }
+
+        highscores[HIGHSCORES_NUM - 1] = score;
+
+        sortHighscores(highscores);
+
+        file = fopen("Highscores.bin", "wb");
+        if (file == NULL) {
+            perror("Error opening file");
+            return;
+        }
+
+        fwrite(highscores, sizeof(int), HIGHSCORES_NUM, file);
+        fclose(file);
+    }
+
+    void sortHighscores() {
+        for (int i = 0; i < HIGHSCORES_NUM - 1; i++) {
+            for (int j = 0; j < HIGHSCORES_NUM - i - 1; j++) {
+                if (highscores[j] < highscores[j + 1]) {
+                    // Swap the elements if they are in the wrong order
+                    int temp = highscores[j];
+                    highscores[j] = highscores[j + 1];
+                    highscores[j + 1] = temp;
+                }
+            }
+        }
+    }
