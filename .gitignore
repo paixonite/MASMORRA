@@ -1,6 +1,7 @@
 # Prerequisites
 *.d
 
+Highscores.bin
 # Object files
 *.o
 *.ko
