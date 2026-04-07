@@ -259,16 +259,16 @@ void initGameData(GameState *gs) {
 
 void titleScreen() {
     clearScreen();
-    printf("****************************************************************************\n");
-    printf("                                BEM-VINDO À                                 \n");
-    printf("          __  __    _    ____  __  __  ___  ____  ____      _               \n");
-    printf("         |  \\/  |  / \\  / ___||  \\/  |/ _ \\|  _ \\|  _ \\    / \\       \n");
-    printf("         | |\\/| | / _ \\ \\___ \\| |\\/| | | | | |_) | |_) |  / _ \\       \n");
-    printf("         | |  | |/ ___ \\ ___) | |  | | |_| |  _ <|  _ <  / ___ \\          \n");
-    printf("         |_|  |_/_/   \\_\\____/|_|  |_|\\___/|_| \\_\\_| \\_\\/_/   \\_\\  \n");
-    printf("                                by: Paixão                                  \n");
-    printf("****************************************************************************\n\n");
-    printf("                      Pressione enter para continuar...                      \n");
+    printf("********************************************************************************\n");
+    printf("                                  BEM-VINDO À                                   \n");
+    printf("             __  __    _    ____  __  __  ___  ____  ____      _                \n");
+    printf("            |  \\/  |  / \\  / ___||  \\/  |/ _ \\|  _ \\|  _ \\    / \\        \n");
+    printf("            | |\\/| | / _ \\ \\___ \\| |\\/| | | | | |_) | |_) |  / _ \\        \n");
+    printf("            | |  | |/ ___ \\ ___) | |  | | |_| |  _ <|  _ <  / ___ \\           \n");
+    printf("            |_|  |_/_/   \\_\\____/|_|  |_|\\___/|_| \\_\\_| \\_\\/_/   \\_\\   \n");
+    printf("                                  by: Paixão                                    \n");
+    printf("********************************************************************************\n\n");
+    printf("                      Pressione enter para continuar...                         \n");
     getchar();
     clearScreen();
 }
@@ -337,29 +337,6 @@ void printsAmulet() {
     printf("              '8b d8'\n");
     printf("               `888'\n");
     printf("                 '\n");
-}
-
-void printsBadEnding(GameState *gs) {
-    printf("Você toma o amuleto para si.\n");
-    printf("Você absorve o poder do amuleto, e consegue sentir a escuridão fluir pelo seu corpo.\n");
-    printf("Você tenta resistir à magia, mas ela te domina e você acaba perdendo sua noção \nda realidade.\n");
-    printf("O que restou de você agora reinará no trono como %c nov%c Xãopai.\n", gs->pronoum, gs->pronoum);
-    printf("|FINAL RUIM|\n");
-}
-
-void printsGoodEnding() {
-    printf("Você destrói o amuleto.\n");
-    printf("Você ouve um estridente ruído vindo do amuleto enquanto vê toda a energia maligna \nse dissipar no ar.\n");
-    printf("Você finalmente libertou a masmorra e os habitantes da cidade das \nmãos do mau!\n");
-    printf("|FINAL BOM|\n");
-}
-
-void printsTrueEnding(GameState *gs) {
-    printf("Você recita a sequência mágica ao amuleto.\n");
-    printf("O amuleto brilha em luz vermelha ofuscante enquanto muda sua forma para um esbelto garoto.\n");
-    printf("Paixão: Uh... Onde eu estou? Eu estava programando um jogo e... acho dormi no teclado.\n");
-    printf("Paixão: Vem, %s, vamo dar um fora daqui. Ficar encarando essa tela de terminal \ntá me dando dor de cabeça...\n", gs->hero.name);
-    printf("|FINAL VERDADEIRO|\n");
 }
 
 // ================= [ COMBAT SYSTEM ] ======================================== //
@@ -515,7 +492,7 @@ void sortHighscores(int* highscores) {
     }
 }
 
-// ================= [ DIALOG AND UI FUNCTIONS ] =============================== //
+// ================= [ DIALOG ] =============================== //
 
 void shopDialog(GameState *gs) {
     switch (gs->currentFloor) {
@@ -569,7 +546,7 @@ void dungeonDialog(GameState *gs) {
             break;
 
         case 1:
-            printf("-|PISO %i|-\n", gs->currentFloor);
+            printf("---|PISO %i|---\n", gs->currentFloor);
             printf("Você desce as escadarias da masmorra, entrando no sistema de esgoto da cidade.\n");
             printf("As criaturas, antes inofensivas, se tornaram ferozes com a influência maligna \n");
             printf("vinda das profundezas.\n\n");
@@ -608,6 +585,29 @@ void dungeonDialog(GameState *gs) {
             printf("Xãopai. Você sente como se fosse passar por uns maus tempos.\n\n");
             break;
     }
+}
+
+void printsBadEnding(GameState *gs) {
+    printf("Você toma o amuleto para si.\n");
+    printf("Você absorve o poder do amuleto, e consegue sentir a escuridão fluir pelo seu corpo.\n");
+    printf("Você tenta resistir à magia, mas ela te domina e você acaba perdendo sua noção \nda realidade.\n");
+    printf("O que restou de você agora reinará no trono como %c nov%c Xãopai.\n", gs->pronoum, gs->pronoum);
+    printf("|FINAL RUIM|\n");
+}
+
+void printsGoodEnding() {
+    printf("Você destrói o amuleto.\n");
+    printf("Você ouve um estridente ruído vindo do amuleto enquanto vê toda a energia maligna \nse dissipar no ar.\n");
+    printf("Você finalmente libertou a masmorra e os habitantes da cidade das \nmãos do mau!\n");
+    printf("|FINAL BOM|\n");
+}
+
+void printsTrueEnding(GameState *gs) {
+    printf("Você recita a sequência mágica ao amuleto.\n");
+    printf("O amuleto brilha em luz vermelha ofuscante enquanto muda sua forma para um esbelto garoto.\n");
+    printf("Paixão: Uh... Onde eu estou? Eu estava programando um jogo e... acho que dormi no teclado.\n");
+    printf("Paixão: Vem, %s, vamo dar um fora daqui. Ficar encarando essa tela de terminal \ntá me dando dor de cabeça...\n", gs->hero.name);
+    printf("|FINAL VERDADEIRO|\n");
 }
 
 // ================= [ COMBAT & EVENT FUNCTIONS ] ============================== //
@@ -983,7 +983,6 @@ int main() {
         
         printf("[1] Jogar novamente\n[2] Highscores\n[3] Sair do jogo\n");
         
-        //int action;
         do {
             action = readInt();
             switch(action) {
