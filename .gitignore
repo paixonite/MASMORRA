@@ -1,3 +1,4 @@
-Highscores.bin
+MASMORRA
+*.bin
 *.exe
-test.sh
+*.sh

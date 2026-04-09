@@ -19,6 +19,7 @@
 
 // Macros de compatibilidade para limpar a tela
 #ifdef _WIN32
+    #include <windows.h>
     #define CLEAR_CMD "cls"
 #else
     #define CLEAR_CMD "clear" // No Linux/Mac usa clear nativo
@@ -897,8 +898,13 @@ int showHighscores(GameState *gs, int* highscores) {
 // ================= [ MAIN LOOP ] ============================================ //
 
 int main() {
-    setlocale(LC_ALL, "Portuguese");
-    
+    setlocale(LC_ALL, ".UTF8");
+
+    #ifdef _WIN32
+        SetConsoleOutputCP(CP_UTF8);
+        SetConsoleCP(CP_UTF8);
+    #endif
+
     int iterationCounter = 0;
     int gamesWon = 0;
     int highscores[HIGHSCORES_NUM] = {0};
