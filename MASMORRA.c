@@ -855,7 +855,7 @@ void updatesHighscores(GameState *gs, int* highscores) {
     fclose(file);
 }
 
-int showHighscores(GameState *gs, int* highscores) {
+int highscoresMenu(GameState *gs, int* highscores) {
     int input;
     clearScreen();
     printf("          - HIGH SCORES -          \n");
@@ -893,6 +893,8 @@ int showHighscores(GameState *gs, int* highscores) {
                 break;
         }
     } while(input != 1 && input != 2);
+    
+    return 0;
 }
 
 // ================= [ MAIN LOOP ] ============================================ //
@@ -998,7 +1000,7 @@ int main() {
                     break;
                     
                 case 2:
-                    if (showHighscores(&gs, highscores))
+                    if (highscoresMenu(&gs, highscores))
                         action = 1;
                     else
                         action = 3;
