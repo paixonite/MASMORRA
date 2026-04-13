@@ -258,6 +258,14 @@ void initGameData(GameState *gs) {
 
 // ================= [ UI & ASCII ART ] ======================================= //
 
+/*
+ * AGRADECIMENTOS - ARTE ASCII
+ * Algumas das artes renderizadas abaixo foram adaptadas de obras originais de diversos artistas.
+ * Os arquivos intactos com as assinaturas encontram-se em /assets.
+ * - Xãopai: Adaptação da obra de eVil
+ * - Amuleto: Adaptação da obra de [...]
+ */
+
 void titleScreen() {
     clearScreen();
     printf("********************************************************************************\n");
