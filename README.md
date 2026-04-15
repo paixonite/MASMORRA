@@ -1,32 +1,32 @@
 # MASMORRA
 
-Um *Dungeon Crawler* clássico de terminal encapsulado em um arquivo C monolítico.
+A classic terminal *Dungeon Crawler* encapsulated in a monolithic C file.
 
-## 🚀 Como Jogar
+## 🚀 How to Play
 
-Como o projeto possui zero dependências externas e é estruturado em um arquivo único, a compilação é instantânea. Você só precisa de um compilador C instalado (como o GCC).
+Since the project has zero external dependencies and is structured in a single file, compilation is instant. You only need an installed C compiler (such as GCC).
 
 ### Linux / macOS
 ```bash
-# Clone o repositório
+# Clone the repository
 git clone [https://github.com/paixonite/MASMORRA.git](https://github.com/paixonite/MASMORRA.git)
 cd MASMORRA
 
 # Compile
 gcc MASMORRA.c -o masmorra -Wall
 
-# Jogue
+# Play
 ./masmorra
 ```
 
 ### Windows
-Se você estiver usando o MinGW, o comando no terminal (ou PowerShell) é muito parecido:
+If you are using MinGW, the command in the terminal (or PowerShell) is very similar:
 
 ```DOS
 gcc MASMORRA.c -o masmorra.exe
 masmorra.exe
 ```
 
-## 👤 Autor
+## 👤 Author
 
-- **Vítor Paixão** - https://github.com/Paixonite
+- **Vítor Paixão** - https://github.com/paixonite
