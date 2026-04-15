@@ -1,11 +1,11 @@
---- ARTES ASCII ---
+--- ASCII ART ---
 
-Aqui estão creditados os artistas cujas obras originais foram adaptadas
-para o jogo, além das minhas artes autorais.
+Are credited here the artists whose original works were
+adapted for the game, besides my original artworks.
 
---- ARTES CREDITADAS ---
+--- CREDITED ARTWKORS ---
 
-1. "Devil" de eVil
+1. "Devil" by eVil
 
                               ,-.
          ___,---.__          /'|`\          __,---,___
@@ -25,7 +25,7 @@ para o jogo, além das minhas artes autorais.
               \   \__, \_     `~'     _/ .__/   /
                `-._,-'   `-._______,-'   `-._,-'
 
-2. Amuleto (não usado) de artista desconhecido
+2. Amulet (unused) from unknown artist
                            
   ⠀⠀⢀⣠⣴⣶⣟⣛⣛⠶⢦⣄⠀⠀⠀⠀⣠⡴⣶⣿⡟⠛⢶⣦⣄⡀⠀⠀
   ⠀⣴⣿⣿⠿⠿⠿⠿⢿⣿⣷⣬⡻⣄⣠⣿⣇⠀⢸⣿⣧⠀⠘⣿⣿⠻⣦⠀
@@ -41,7 +41,7 @@ para o jogo, além das minhas artes autorais.
   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢷⣌⠻⣿⣷⡞⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠳⠞⠉⠀⠀⠀⠀⠀⠀⠀
 
-3. Amuleto de [...]
+3. Amulet by [...]
 
         .....           .....
     ,ad8PPPP88b,     ,d88PPPP8ba,
@@ -60,9 +60,9 @@ para o jogo, além das minhas artes autorais.
                 `888'
                   '⠀⠀⠀⠀⠀⠀⠀⠀
 
---- ARTES AUTORAIS ---
+--- ORIGINAL ARTWORKS ---
 
-1. Cartões de Título
+1. Title Cards
                 __  __               _____   __  __    ____    _____    _____             
                |  \/  |     /\      / ____| |  \/  |  / __ \  |  __ \  |  __ \      /\    
                | \  / |    /  \    | (___   | \  / | | |  | | | |__) | | |__) |    /  \   
