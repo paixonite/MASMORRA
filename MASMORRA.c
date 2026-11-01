@@ -83,15 +83,24 @@ typedef struct {
 static char inputLine[256];
 static char *inputPtr = NULL;
 
+bool hasPendingInput() {
+    if (inputPtr == NULL) return false;
+    char *p = inputPtr;
+    while (*p && isspace((unsigned char)*p)) p++;
+    return (*p != '\0');
+}
+
 // Função blindada contra inputs inválidos com suporte a múltiplos inteiros na mesma linha
 int readInt() {
     int value;
     while (true) {
         // Se o buffer estiver vazio ou no final da linha, lê uma nova linha
         while (inputPtr == NULL || *inputPtr == '\0') {
+            printf("> ");
+            fflush(stdout);
             if (fgets(inputLine, sizeof(inputLine), stdin) == NULL) {
                 if (feof(stdin)) exit(0);
-                fprintf(stderr, "Entrada inválida.\n");
+                printf("> Entrada inválida.\n");
                 continue;
             }
             inputPtr = inputLine;
@@ -118,7 +127,7 @@ int readInt() {
         while (*inputPtr && !isspace((unsigned char)*inputPtr)) {
             inputPtr++;
         }
-        fprintf(stderr, "Entrada inválida.\n");
+        printf("> Entrada inválida.\n");
     }
 }
 
@@ -126,13 +135,15 @@ int readInt() {
 void readString(char* buffer, int maxLength) {
     inputPtr = NULL; // Descarta tokens pendentes ao ler string
     while (true) {
+        printf("> ");
+        fflush(stdout);
         if (fgets(buffer, maxLength, stdin) != NULL) {
             buffer[strcspn(buffer, "\n")] = 0; // Remove o \n do final
             if (strlen(buffer) > 0) return;
         } else if (feof(stdin)) {
             exit(0);
         }
-        fprintf(stderr, "Entrada inválida.\n");
+        printf("> Entrada inválida.\n");
     }
 }
 
@@ -489,7 +500,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
                        heal, gs->hero.potions);
             }
         } else {
-            fprintf(stderr, "Comando não encontrado.\n");
+            printf("> Comando não encontrado.\n\n");
         }
     } while (gs->monsters[monsterCode].hp > 0);
 
@@ -502,20 +513,35 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
 
 // ================= [ EVENTS & SHOPS ] ====================================== //
 
+void printShopBox(GameState *gs, int shopCode, bool item1Available, bool item2Available) {
+    printf("\n+----------------- [ LOJA ] -----------------+\n");
+    printf("|   Moedas: %i\n", gs->hero.coins);
+    printf("+--------------------------------------------+\n");
+    printf("|   [1] Sair da loja\n");
+    if (item1Available) {
+        printf("|   [2] %s - $%i\n", gs->shops[shopCode].item1Name, gs->shops[shopCode].item1Price);
+    } else {
+        printf("|   [2] %s - (Comprado)\n", gs->shops[shopCode].item1Name);
+    }
+    if (item2Available) {
+        printf("|   [3] %s - $%i\n", gs->shops[shopCode].item2Name, gs->shops[shopCode].item2Price);
+    } else {
+        printf("|   [3] %s - (Comprado)\n", gs->shops[shopCode].item2Name);
+    }
+    if (gs->currentFloor >= 1)
+        printf("|   [4] Poção de cura - $50\n");
+    if (gs->currentFloor > 2)
+        printf("|   [5] Pingente de vida - $150\n");
+    if (gs->hero.potions > 0)
+        printf("|   [6] Beber poção de cura (x%i)\n", gs->hero.potions);
+    printf("+--------------------------------------------+\n\n");
+}
+
 void shopInteraction(GameState *gs, int shopCode) {
     bool item1Available = true;
     bool item2Available = true;
     
-    printf("(Você tem %i moedas)\n", gs->hero.coins);
-    printf("[1] Sair da loja\n");
-    printf("[2] %s - $%i\n", gs->shops[shopCode].item1Name, gs->shops[shopCode].item1Price);
-    printf("[3] %s - $%i\n", gs->shops[shopCode].item2Name, gs->shops[shopCode].item2Price);
-    if (gs->currentFloor >= 1)
-        printf("[4] Poção de cura - $50\n");
-    if (gs->currentFloor > 2)
-        printf("[5] Pingente de vida - $150\n");
-    if (gs->hero.potions > 0)
-        printf("[6] Beber poção de cura (x%i)\n", gs->hero.potions);
+    printShopBox(gs, shopCode, item1Available, item2Available);
     
     int action;
     do {
@@ -523,6 +549,9 @@ void shopInteraction(GameState *gs, int shopCode) {
         switch (action) {
             case 0: // INFO
                 showsInfo(gs, NULL);
+                if (!hasPendingInput()) {
+                    printShopBox(gs, shopCode, item1Available, item2Available);
+                }
                 break;
                 
             case 1: // LEAVES THE SHOP
@@ -531,25 +560,33 @@ void shopInteraction(GameState *gs, int shopCode) {
             case 2: // BUYS ITEM 1
                 if ((item1Available == true) && (gs->hero.coins >= gs->shops[shopCode].item1Price)) {
                     strcpy(gs->hero.atkItem, gs->shops[shopCode].item1Name);
-                    printf("Você comprou %s.\n", gs->shops[shopCode].item1Name);
+                    printf("\n> Você comprou %s.\n", gs->shops[shopCode].item1Name);
                     gs->hero.atk = gs->shops[shopCode].item1atkPoints;
                     item1Available = false;
                     gs->hero.coins -= gs->shops[shopCode].item1Price;
                     gs->score += gs->shops[shopCode].item1Price / 2;
-                } else
-                    fprintf(stderr, "Impossível realizar a ação.\n");
+                } else {
+                    printf("\n> Impossível realizar a ação.\n");
+                }
+                if (!hasPendingInput()) {
+                    printShopBox(gs, shopCode, item1Available, item2Available);
+                }
                 break;
                 
             case 3: // BUYS ITEM 2
                 if ((item2Available == true) && (gs->hero.coins >= gs->shops[shopCode].item2Price)) {
                     strcpy(gs->hero.defItem, gs->shops[shopCode].item2Name);
-                    printf("Você comprou %s.\n", gs->shops[shopCode].item2Name);
+                    printf("\n> Você comprou %s.\n", gs->shops[shopCode].item2Name);
                     gs->hero.def = gs->shops[shopCode].item2defPoints;
                     item2Available = false;
                     gs->hero.coins -= gs->shops[shopCode].item2Price;
                     gs->score += gs->shops[shopCode].item2Price / 2;
-                } else
-                    fprintf(stderr, "Impossível realizar a ação.\n");
+                } else {
+                    printf("\n> Impossível realizar a ação.\n");
+                }
+                if (!hasPendingInput()) {
+                    printShopBox(gs, shopCode, item1Available, item2Available);
+                }
                 break;
                 
             case 4: // BUYS POTION
@@ -557,20 +594,28 @@ void shopInteraction(GameState *gs, int shopCode) {
                     gs->hero.potions++;
                     gs->hero.coins -= 50;
                     gs->score += 20;
-                    printf("Você comprou uma poção de cura. (Você tem %i)\n", gs->hero.potions);
-                } else if (gs->currentFloor >= 1)
-                    fprintf(stderr, "Impossível realizar a ação.\n");
+                    printf("\n> Você comprou uma poção de cura. (Você tem %i)\n", gs->hero.potions);
+                } else if (gs->currentFloor >= 1) {
+                    printf("\n> Impossível realizar a ação.\n");
+                }
+                if (!hasPendingInput()) {
+                    printShopBox(gs, shopCode, item1Available, item2Available);
+                }
                 break;
                 
             case 5: // BUYS PENDANT
                 if (gs->hero.coins >= 150 && gs->currentFloor > 2) {
-                    printf("Você comprou pingente de vida.\n");
+                    printf("\n> Você comprou pingente de vida.\n");
                     gs->hero.coins -= 150;
                     gs->hero.maxHp += 50;
                     gs->hero.hp += 50;
                     gs->score += 150;
-                } else if (gs->currentFloor > 2)
-                    fprintf(stderr, "Impossível realizar a ação.\n");
+                } else if (gs->currentFloor > 2) {
+                    printf("\n> Impossível realizar a ação.\n");
+                }
+                if (!hasPendingInput()) {
+                    printShopBox(gs, shopCode, item1Available, item2Available);
+                }
                 break;
                 
             case 6: // DRINKS POTION IN SHOP
@@ -579,16 +624,22 @@ void shopInteraction(GameState *gs, int shopCode) {
                     int heal = 80;
                     if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                     gs->hero.hp += heal;
-                    printf("Você bebeu uma poção de cura e recuperou %i de vida! Saúde: %i/%i\n", heal, gs->hero.hp, gs->hero.maxHp);
+                    printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! Saúde: %i/%i\n", heal, gs->hero.hp, gs->hero.maxHp);
                 } else if (gs->hero.potions > 0 && gs->hero.hp >= gs->hero.maxHp) {
-                    printf("Sua saúde já está no máximo!\n");
+                    printf("\n> Sua saúde já está no máximo!\n");
                 } else {
-                    fprintf(stderr, "Impossível realizar a ação.\n");
+                    printf("\n> Impossível realizar a ação.\n");
+                }
+                if (!hasPendingInput()) {
+                    printShopBox(gs, shopCode, item1Available, item2Available);
                 }
                 break;
                 
             default:
-                fprintf(stderr, "Comando não encontrado.\n");
+                printf("\n> Comando não encontrado.\n");
+                if (!hasPendingInput()) {
+                    printShopBox(gs, shopCode, item1Available, item2Available);
+                }
                 break;
         }
     } while (action != 1);
@@ -646,55 +697,64 @@ void shopDialog(GameState *gs) {
 }
 
 void dungeonDialog(GameState *gs) {
+    printf("\n================================================================================\n");
     switch (gs->currentFloor) {
         case 0:
-            printf("---|CIDADE|---\n");
-            printf("Diversos aventureiros da cidade acima adentraram a masmorra antes de você, mas \n");
-            printf("poucos foram vistos novamente. Diz-se que um mal ancestral espreita nas \n");
-            printf("profundezas, o imensamente poderoso espírito Xãopai.\n\n");
-            printf("Antes de começar sua aventura, você entra em uma loja.\n");
+            printf("                                   [ CIDADE ]                                   \n");
+            printf("================================================================================\n\n");
+            printf("  Diversos aventureiros da cidade acima adentraram a masmorra antes de você,\n");
+            printf("  mas poucos foram vistos novamente. Diz-se que um mal ancestral espreita nas\n");
+            printf("  profundezas, o imensamente poderoso espírito Xãopai.\n\n");
+            printf("  Antes de começar sua aventura, você entra em uma loja.\n");
             break;
 
         case 1:
-            printf("---|PISO %i|---\n", gs->currentFloor);
-            printf("Você desce as escadarias da masmorra, entrando no sistema de esgoto da cidade.\n");
-            printf("As criaturas, antes inofensivas, se tornaram ferozes com a influência maligna \n");
-            printf("vinda das profundezas.\n\n");
+            printf("                                    [ PISO 1 ]                                  \n");
+            printf("================================================================================\n\n");
+            printf("  Você desce as escadarias da masmorra, entrando no sistema de esgoto da cidade.\n");
+            printf("  As criaturas, antes inofensivas, se tornaram ferozes com a influência maligna\n");
+            printf("  vinda das profundezas.\n");
             break;
             
         case 2:
-            printf("---|PISO %i|---\n", gs->currentFloor);
-            printf("Você desce as escadarias da masmorra, entrando em uma prisão antiga há muito tempo \n");
-            printf("abandonada. Esta prisão costumava abrigar os mais perigosos criminosos, mas a \n");
-            printf("influência corrompeu as mentes dos guardas e dos prisioneiros.\n\n");
+            printf("                                    [ PISO 2 ]                                  \n");
+            printf("================================================================================\n\n");
+            printf("  Você desce as escadarias da masmorra, entrando em uma prisão antiga há muito\n");
+            printf("  tempo abandonada. Esta prisão costumava abrigar os mais perigosos criminosos,\n");
+            printf("  mas a influência corrompeu as mentes dos guardas e dos prisioneiros.\n");
             break;
             
         case 3:
-            printf("---|PISO %i|---\n", gs->currentFloor);
-            printf("Você desce as escadarias da masmorra, entrando em uma caverna escura e rica em \n");
-            printf("minério. Uma vez foi um grande centro comercial habitada por anões, mas foi \n");
-            printf("abandonada com a vinda da pestilência.\n\n");
+            printf("                                    [ PISO 3 ]                                  \n");
+            printf("================================================================================\n\n");
+            printf("  Você desce as escadarias da masmorra, entrando em uma caverna escura e rica em\n");
+            printf("  minério. Uma vez foi um grande centro comercial habitada por anões, mas foi\n");
+            printf("  abandonada com a vinda da pestilência.\n");
             break;
             
         case 4:
-            printf("---|PISO %i|---\n", gs->currentFloor);
-            printf("Você desce as escadarias da masmorra, entrando na antiga metrópole do reino dos \n");
-            printf("anões, hoje em ruínas. Contam as histórias que a povoada capital sucumbiu subitamente \n");
-            printf("com a chegada de um enorme mal.\n\n");
+            printf("                                    [ PISO 4 ]                                  \n");
+            printf("================================================================================\n\n");
+            printf("  Você desce as escadarias da masmorra, entrando na antiga metrópole do reino dos\n");
+            printf("  anões, hoje em ruínas. Contam as histórias que a povoada capital sucumbiu\n");
+            printf("  subitamente com a chegada de um enorme mal.\n");
             break;
             
         case 5:
-            printf("---|PISO %i|---\n", gs->currentFloor);
-            printf("Você desce as escadarias da masmorra, chegando aos escaldantes corredores dos salões \n");
-            printf("demoníacos. Você pode sentir uma poderosa aura sombria no ar...\n\n");
+            printf("                                    [ PISO 5 ]                                  \n");
+            printf("================================================================================\n\n");
+            printf("  Você desce as escadarias da masmorra, chegando aos escaldantes corredores dos\n");
+            printf("  salões demoníacos. Você pode sentir uma poderosa aura sombria no ar...\n");
             break;
 
         case 6:
-            printf("---|TEMPLO DE XÃOPAI|---\n");
-            printf("Você desce as escadarias da masmorra, chegando finalmente ao trono do todo poderoso \n");
-            printf("Xãopai. Você sente como se fosse passar por uns maus tempos.\n\n");
+            printf("                               [ TEMPLO DE XÃOPAI ]                             \n");
+            printf("================================================================================\n\n");
+            printf("  Você desce as escadarias da masmorra, chegando finalmente ao trono do todo\n");
+            printf("  poderoso Xãopai. Você sente como se fosse passar por uns maus tempos.\n");
             break;
     }
+    printf("\n================================================================================\n\n");
 }
 
 void printsBadEnding(GameState *gs) {
@@ -749,7 +809,7 @@ bool chest(GameState *gs, bool *chestOpened) {
                     break;
 
                 default:
-                    fprintf(stderr, "Comando não encontrado.\n");
+                    printf("> Comando não encontrado.\n\n");
                     break;
             }
         } while(action != 1 && action != 2);
@@ -843,7 +903,7 @@ bool chest(GameState *gs, bool *chestOpened) {
                         }
                         break;
                     default:
-                        fprintf(stderr, "Comando não encontrado.\n");
+                        printf("> Comando não encontrado.\n\n");
                         break;
                 }
             } while(chestEnemy.hp > 0);
@@ -879,7 +939,7 @@ bool chest(GameState *gs, bool *chestOpened) {
                             break;
                         }
                         default:
-                            fprintf(stderr, "Comando não encontrado.\n");
+                            printf("> Comando não encontrado.\n\n");
                             break;
                     }
                 } while(action != 1);
@@ -959,7 +1019,7 @@ bool xaopaiInteraction(GameState *gs) {
                 break;
 
             default:
-                fprintf(stderr, "Comando não encontrado.\n");
+                printf("> Comando não encontrado.\n\n");
                 break;
         }
     } while(gs->monsters[XAOPAI].hp > 0);
@@ -1057,7 +1117,7 @@ int highscoresMenu(GameState *gs, highscore_entry_t* highscores) {
                 return 1;
                 break;
             case 2: {
-                printf("> Deseja realmente sair? (s/n): ");
+                printf("> Deseja realmente sair? (s/n)\n");
                 char confirm[STR_LENGTH];
                 readString(confirm, STR_LENGTH);
                 if (tolower((unsigned char)confirm[0]) == 's' || tolower((unsigned char)confirm[0]) == 'y') {
@@ -1080,7 +1140,7 @@ int highscoresMenu(GameState *gs, highscore_entry_t* highscores) {
                 printf("\12\n");
                 break;
             default:
-                fprintf(stderr, "Comando não encontrado.\n");
+                printf("> Comando não encontrado.\n\n");
                 break;
         }
     } while(input != 1);
@@ -1212,7 +1272,7 @@ int main() {
                     break;
                     
                 case 3: {
-                    printf("> Deseja realmente sair? (s/n): ");
+                    printf("> Deseja realmente sair? (s/n)\n");
                     char confirm[STR_LENGTH];
                     readString(confirm, STR_LENGTH);
                     if (tolower((unsigned char)confirm[0]) != 's' && tolower((unsigned char)confirm[0]) != 'y') {
@@ -1223,7 +1283,7 @@ int main() {
                 }
                     
                 default:
-                    fprintf(stderr, "Comando não encontrado.\n");
+                    printf("> Comando não encontrado.\n\n");
                     break;
             }
         } while((action != 1) && (action != 3));
