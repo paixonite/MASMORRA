@@ -84,6 +84,8 @@ int readInt() {
             if (sscanf(buffer, "%d", &value) == 1) {
                 return value;
             }
+        } else if (feof(stdin)) {
+            exit(0);
         }
         fprintf(stderr, "Entrada inválida.\n");
     }
@@ -95,6 +97,8 @@ void readString(char* buffer, int maxLength) {
         if (fgets(buffer, maxLength, stdin) != NULL) {
             buffer[strcspn(buffer, "\n")] = 0; // Remove o \n do final
             if (strlen(buffer) > 0) return;
+        } else if (feof(stdin)) {
+            exit(0);
         }
         fprintf(stderr, "Entrada inválida.\n");
     }
@@ -279,20 +283,40 @@ void titleScreen() {
     clearScreen();
 }
 
-void showsInfo(GameState *gs, int monsterCode) {
-    printf("> %s\n", gs->hero.name);
-    printf("| Saúde: %i/%i\n", gs->hero.hp, gs->hero.maxHp);
-    printf("| Moedas: %i\n", gs->hero.coins);
-    printf("| Ataque: %i (%s)\n", gs->hero.atk, gs->hero.atkItem);
-    printf("| Defesa: %i (%s)\n", gs->hero.def, gs->hero.defItem);
-
-    if (monsterCode > 0) {
-        printf("\n");
-        printf("> %s\n", gs->monsters[monsterCode].name);
-        printf("| Saúde: %i/%i\n", gs->monsters[monsterCode].hp, gs->monsters[monsterCode].maxHp);
-        printf("| Ataque: %i\n", gs->monsters[monsterCode].atk);
-        printf("| Defesa: %i\n", gs->monsters[monsterCode].def);
+void printHpBar(int current, int max) {
+    int length = 10;
+    if (current < 0) current = 0;
+    int filled = (max > 0) ? (current * length) / max : 0;
+    if (filled > length) filled = length;
+    if (filled < 0) filled = 0;
+    printf("[");
+    for (int i = 0; i < filled; i++) {
+        printf("█");
     }
+    for (int i = filled; i < length; i++) {
+        printf("░");
+    }
+    printf("] %i/%i\n", current, max);
+}
+
+void showsInfo(GameState *gs, int monsterCode) {
+    printf("\n+---------------- [ STATUS ] ----------------+\n");
+    printf("| > %s\n", gs->hero.name);
+    printf("|   Saúde:  ");
+    printHpBar(gs->hero.hp, gs->hero.maxHp);
+    printf("|   Moedas: %i\n", gs->hero.coins);
+    printf("|   Ataque: %i (%s)\n", gs->hero.atk, gs->hero.atkItem);
+    printf("|   Defesa: %i (%s)\n", gs->hero.def, gs->hero.defItem);
+
+    if (monsterCode >= 0) {
+        printf("+--------------------------------------------+\n");
+        printf("| > %s\n", gs->monsters[monsterCode].name);
+        printf("|   Saúde:  ");
+        printHpBar(gs->monsters[monsterCode].hp, gs->monsters[monsterCode].maxHp);
+        printf("|   Ataque: %i\n", gs->monsters[monsterCode].atk);
+        printf("|   Defesa: %i\n", gs->monsters[monsterCode].def);
+    }
+    printf("+--------------------------------------------+\n\n");
 }
 
 void printsXaopai() {
@@ -366,13 +390,19 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
                 printf("Pontuação: %i\n", gs->score);
                 return true;
             } else {
-                gs->monsters[monsterCode].hp -= (gs->hero.atk - gs->monsters[monsterCode].def);
+                int heroDamage = gs->hero.atk - gs->monsters[monsterCode].def;
+                gs->monsters[monsterCode].hp -= heroDamage;
+                printf("\n> Você atacou com %s causando %i de dano!\n", gs->hero.atkItem, heroDamage);
             }
 
             // Revide do monstro
             if (gs->monsters[monsterCode].hp > 0) {
                 if (gs->hero.def < gs->monsters[monsterCode].atk) {
-                    gs->hero.hp -= (gs->monsters[monsterCode].atk - gs->hero.def);
+                    int monsterDamage = gs->monsters[monsterCode].atk - gs->hero.def;
+                    gs->hero.hp -= monsterDamage;
+                    printf("> %s te atacou causando %i de dano!\n\n", gs->monsters[monsterCode].name, monsterDamage);
+                } else {
+                    printf("> %s te atacou, mas seu escudo bloqueou o golpe!\n\n", gs->monsters[monsterCode].name);
                 }
                 
                 if (gs->hero.hp <= 0) {
@@ -380,10 +410,6 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
                     printf("VOCÊ MORREU PARA %s NO PISO %i\n\a", gs->monsters[monsterCode].name, gs->currentFloor);
                     printf("Pontuação: %i\n", gs->score);
                     return true;
-                } else {
-                    printf("\n%s: %i/%i  |  %s: %i/%i\n\n", 
-                           gs->hero.name, gs->hero.hp, gs->hero.maxHp,
-                           gs->monsters[monsterCode].name, gs->monsters[monsterCode].hp, gs->monsters[monsterCode].maxHp);
                 }
             }
         } else {
@@ -393,7 +419,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
 
     gs->score += 10;
     gs->hero.coins += gs->monsters[monsterCode].coins;
-    printf("Você derrotou %s.\nVocê encontrou %i moedas!\n\n", gs->monsters[monsterCode].name, gs->monsters[monsterCode].coins);
+    printf("> Você derrotou %s!\n> Você encontrou %i moedas!\n\n", gs->monsters[monsterCode].name, gs->monsters[monsterCode].coins);
     
     return false;
 }
@@ -673,6 +699,7 @@ bool chest(GameState *gs, bool *chestOpened) {
                             break;
                         case 1:
                             chestEnemy.hp -= gs->hero.atk;
+                            printf("\n> Você atacou o %s causando %i de dano!\n", chestEnemy.name, gs->hero.atk);
                             break;
                         default:
                             fprintf(stderr, "Comando não encontrado.\n");
@@ -681,24 +708,26 @@ bool chest(GameState *gs, bool *chestOpened) {
                 } while(action != 1);
                 
                 if (chestEnemy.hp > 0) {
-                    if (gs->hero.def < chestEnemy.atk)
-                        gs->hero.hp -= (chestEnemy.atk - gs->hero.def);
+                    if (gs->hero.def < chestEnemy.atk) {
+                        int mimicDamage = chestEnemy.atk - gs->hero.def;
+                        gs->hero.hp -= mimicDamage;
+                        printf("> %s te mordeu causando %i de dano!\n\n", chestEnemy.name, mimicDamage);
+                    } else {
+                        printf("> %s tentou te morder, mas sua defesa bloqueou!\n\n", chestEnemy.name);
+                    }
                     if (gs->hero.hp <= 0) {
                         clearScreen();
                         printf("VOCÊ MORREU PARA %s NO PISO %i\n\a", chestEnemy.name, gs->currentFloor);
                         printf("Pontuação: %i\n", gs->score);
                         return true;
-                    } else {
-                        printf("%s: %i/%i\n", gs->hero.name, gs->hero.hp, gs->hero.maxHp);
-                        printf("%s: %i/%i\n", chestEnemy.name, chestEnemy.hp, chestEnemy.maxHp);
                     }
                 }
             } while(chestEnemy.hp > 0);
             
             gs->score += chestEnemy.coins;
             gs->hero.coins += chestEnemy.coins;
-            printf("Você derrotou %s.\n", chestEnemy.name);
-            printf("Você encontrou %d moedas!\n", chestEnemy.coins);
+            printf("> Você derrotou o %s!\n", chestEnemy.name);
+            printf("> Você encontrou %d moedas!\n\n", chestEnemy.coins);
 
         } else if (!run) {
             chestEnemy.maxHp = 10 * gs->currentFloor;
@@ -714,28 +743,28 @@ bool chest(GameState *gs, bool *chestOpened) {
                         case 0:
                             showsInfo(gs, -1);
                             break;
-                        case 1:
-                            chestEnemy.hp -= (gs->hero.atk + 1);
+                        case 1: {
+                            int kickDamage = gs->hero.atk + 1;
+                            chestEnemy.hp -= kickDamage;
+                            printf("\n> Você chutou violentamente o baú causando %i de dano!\n\n", kickDamage);
                             break;
+                        }
                         default:
                             fprintf(stderr, "Comando não encontrado.\n");
                             break;
                     }
                 } while(action != 1);
-                
-                if (chestEnemy.hp > 0)
-                    printf("Baú: %i/%i\n", chestEnemy.hp, chestEnemy.maxHp);
             } while(chestEnemy.hp > 0);
             
             gs->score += chestEnemy.coins;
             gs->hero.coins += chestEnemy.coins;
-            printf("Você cuidadosamente abre o baú.\n");
-            printf("Você encontrou %d moedas!\n", chestEnemy.coins);
+            printf("> A tranca quebra e você abre o baú!\n");
+            printf("> Você encontrou %d moedas!\n\n", chestEnemy.coins);
         }
 
         if (*chestOpened == false && !run) {
             gs->secretNumber = rand() % 900 + 100;
-            printf("Você encontra uma marcação suspeita gravada no fundo do baú: %i\n", gs->secretNumber);
+            printf("> Você encontra uma marcação suspeita gravada no fundo do baú: %i\n\n", gs->secretNumber);
             *chestOpened = true;
         }
     }
@@ -756,6 +785,8 @@ bool xaopaiInteraction(GameState *gs) {
 
             case 1: // ATTACK
                 gs->monsters[XAOPAI].hp -= gs->hero.atk;
+                printf("\n> Você atacou XÃOPAI com %s causando %i de dano!\n", 
+                       gs->hero.atkItem, gs->hero.atk);
                 break;
 
             default:
@@ -765,20 +796,19 @@ bool xaopaiInteraction(GameState *gs) {
         
         if (action == 1 && gs->monsters[XAOPAI].hp > 0) {
             gs->hero.hp -= gs->monsters[XAOPAI].atk;
+            printf("> XÃOPAI revidou com poder sombrio causando %i de dano!\n\n", 
+                   gs->monsters[XAOPAI].atk);
             if (gs->hero.hp <= 0) {
                 clearScreen();
                 printf("VOCÊ PERECEU DIANTE DE XÃOPAI.\n\a");
                 printf("Pontuação: %i\n", gs->score);
                 return true;
-            } else {
-                printf("%s: %i/%i\n", gs->hero.name, gs->hero.hp, gs->hero.maxHp);
-                printf("XÃOPAI: %i/%i\n", gs->monsters[XAOPAI].hp, gs->monsters[XAOPAI].maxHp);
             }
         }
     } while(gs->monsters[XAOPAI].hp > 0);
 
     gs->score += 1000;
-    printf("VOCÊ DERROTOU O ESPÍRITO DE XÃOPAI!\n\n");
+    printf("> VOCÊ DERROTOU O ESPÍRITO DE XÃOPAI!\n\n");
     return false;
 }
 
