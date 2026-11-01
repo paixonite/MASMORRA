@@ -115,98 +115,95 @@ void initGameData(GameState *gs) {
     strcpy(gs->hero.atkItem, "Seus punhos");
     strcpy(gs->hero.defItem, "Nada");
 
-    // Lógica do RNG
-    srand((unsigned)time(NULL));
-
     strcpy(gs->monsters[0].name, "Ratazana gigante");
-    srand(clock()); gs->monsters[0].maxHp = rand() % 2 + 3;
-    srand(clock()); gs->monsters[0].atk = rand() % 3 + 1;
-    srand(clock()); gs->monsters[0].def = rand() % 1 + 0;
-    srand(clock()); gs->monsters[0].coins = rand() % 5 + 5;
+    gs->monsters[0].maxHp = rand() % 2 + 3;
+    gs->monsters[0].atk = rand() % 3 + 1;
+    gs->monsters[0].def = rand() % 1 + 0;
+    gs->monsters[0].coins = rand() % 5 + 5;
 
     strcpy(gs->monsters[1].name, "Cobra");
-    srand(clock()); gs->monsters[1].maxHp = rand() % 1 + 3;
-    srand(clock()); gs->monsters[1].atk = rand() % 2 + 2;
-    srand(clock()); gs->monsters[1].def = rand() % 1 + 0;
-    srand(clock()); gs->monsters[1].coins = rand() % 5 + 5;
+    gs->monsters[1].maxHp = rand() % 1 + 3;
+    gs->monsters[1].atk = rand() % 2 + 2;
+    gs->monsters[1].def = rand() % 1 + 0;
+    gs->monsters[1].coins = rand() % 5 + 5;
 
     strcpy(gs->monsters[2].name, "Gosma gigante");
-    srand(clock()); gs->monsters[2].maxHp = rand() % 2 + 3;
-    srand(clock()); gs->monsters[2].atk = rand() % 2 + 2;
-    srand(clock()); gs->monsters[2].def = rand() % 1 + 0;
-    srand(clock()); gs->monsters[2].coins = rand() % 5 + 5;
+    gs->monsters[2].maxHp = rand() % 2 + 3;
+    gs->monsters[2].atk = rand() % 2 + 2;
+    gs->monsters[2].def = rand() % 1 + 0;
+    gs->monsters[2].coins = rand() % 5 + 5;
 
     strcpy(gs->monsters[3].name, "Ladrão louco");
-    srand(clock()); gs->monsters[3].maxHp = rand() % 2 + 3;
-    srand(clock()); gs->monsters[3].atk = rand() % 3 + 2;
-    srand(clock()); gs->monsters[3].def = rand() % 2 + 0;
-    srand(clock()); gs->monsters[3].coins = rand() % 5 + 6;
+    gs->monsters[3].maxHp = rand() % 2 + 3;
+    gs->monsters[3].atk = rand() % 3 + 2;
+    gs->monsters[3].def = rand() % 2 + 0;
+    gs->monsters[3].coins = rand() % 5 + 6;
 
     strcpy(gs->monsters[4].name, "Esqueleto");
-    srand(clock()); gs->monsters[4].maxHp = rand() % 1 + 3;
-    srand(clock()); gs->monsters[4].atk = rand() % 2 + 3;
-    srand(clock()); gs->monsters[4].def = rand() % 2 + 0;
-    srand(clock()); gs->monsters[4].coins = rand() % 5 + 7;
+    gs->monsters[4].maxHp = rand() % 1 + 3;
+    gs->monsters[4].atk = rand() % 2 + 3;
+    gs->monsters[4].def = rand() % 2 + 0;
+    gs->monsters[4].coins = rand() % 5 + 7;
 
     strcpy(gs->monsters[5].name, "Guarda da prisão");
-    srand(clock()); gs->monsters[5].maxHp  = rand() % 2 + 3;
-    srand(clock()); gs->monsters[5].atk = rand() % 2 + 3;
-    srand(clock()); gs->monsters[5].def = rand() % 2 + 0;
-    srand(clock()); gs->monsters[5].coins = rand() % 5 + 7;
+    gs->monsters[5].maxHp = rand() % 2 + 3;
+    gs->monsters[5].atk = rand() % 2 + 3;
+    gs->monsters[5].def = rand() % 2 + 0;
+    gs->monsters[5].coins = rand() % 5 + 7;
 
     strcpy(gs->monsters[6].name, "Morcego vampiro");
-    srand(clock()); gs->monsters[6].maxHp = rand() % 2 + 4;
-    srand(clock()); gs->monsters[6].atk = rand() % 2 + 2;
-    srand(clock()); gs->monsters[6].def = rand() % 2 + 1;
-    srand(clock()); gs->monsters[6].coins = rand() % 5 + 10;
+    gs->monsters[6].maxHp = rand() % 2 + 4;
+    gs->monsters[6].atk = rand() % 2 + 2;
+    gs->monsters[6].def = rand() % 2 + 1;
+    gs->monsters[6].coins = rand() % 5 + 10;
 
     strcpy(gs->monsters[7].name, "Aranha gigante");
-    srand(clock()); gs->monsters[7].maxHp = rand() % 2 + 5;
-    srand(clock()); gs->monsters[7].atk = rand() % 2 + 3;
-    srand(clock()); gs->monsters[7].def = rand() % 2 + 1;
-    srand(clock()); gs->monsters[7].coins = rand() % 5 + 10;
+    gs->monsters[7].maxHp = rand() % 2 + 5;
+    gs->monsters[7].atk = rand() % 2 + 3;
+    gs->monsters[7].def = rand() % 2 + 1;
+    gs->monsters[7].coins = rand() % 5 + 10;
 
     strcpy(gs->monsters[8].name, "Troll selvagem");
-    srand(clock()); gs->monsters[8].maxHp = rand() % 3 + 5;
-    srand(clock()); gs->monsters[8].atk = rand() % 1 + 4;
-    srand(clock()); gs->monsters[8].def = rand() % 1 + 2;
-    srand(clock()); gs->monsters[8].coins = rand() % 5 + 10;
+    gs->monsters[8].maxHp = rand() % 3 + 5;
+    gs->monsters[8].atk = rand() % 1 + 4;
+    gs->monsters[8].def = rand() % 1 + 2;
+    gs->monsters[8].coins = rand() % 5 + 10;
 
     strcpy(gs->monsters[9].name, "Soldado anão");
-    srand(clock()); gs->monsters[9].maxHp = rand() % 2 + 6;
-    srand(clock()); gs->monsters[9].atk = rand() % 3 + 4;
-    srand(clock()); gs->monsters[9].def = rand() % 2 + 1;
-    srand(clock()); gs->monsters[9].coins = rand() % 6 + 13;
+    gs->monsters[9].maxHp = rand() % 2 + 6;
+    gs->monsters[9].atk = rand() % 3 + 4;
+    gs->monsters[9].def = rand() % 2 + 1;
+    gs->monsters[9].coins = rand() % 6 + 13;
 
     strcpy(gs->monsters[10].name, "Monge anão");
-    srand(clock()); gs->monsters[10].maxHp = rand() % 2 + 4;
-    srand(clock()); gs->monsters[10].atk = rand() % 2 + 5;
-    srand(clock()); gs->monsters[10].def = rand() % 1 + 3;
-    srand(clock()); gs->monsters[10].coins = rand() % 7 + 13;
+    gs->monsters[10].maxHp = rand() % 2 + 4;
+    gs->monsters[10].atk = rand() % 2 + 5;
+    gs->monsters[10].def = rand() % 1 + 3;
+    gs->monsters[10].coins = rand() % 7 + 13;
 
     strcpy(gs->monsters[11].name, "Bruxo anão");
-    srand(clock()); gs->monsters[11].maxHp = rand() % 2 + 3;
-    srand(clock()); gs->monsters[11].atk = rand() % 3 + 5;
-    srand(clock()); gs->monsters[11].def = rand() % 1 + 3;
-    srand(clock()); gs->monsters[11].coins = rand() % 7 + 14;
+    gs->monsters[11].maxHp = rand() % 2 + 3;
+    gs->monsters[11].atk = rand() % 3 + 5;
+    gs->monsters[11].def = rand() % 1 + 3;
+    gs->monsters[11].coins = rand() % 7 + 14;
 
     strcpy(gs->monsters[12].name, "Demônio estripador");
-    srand(clock()); gs->monsters[12].maxHp = rand() % 2 + 7;
-    srand(clock()); gs->monsters[12].atk = rand() % 2 + 6;
-    srand(clock()); gs->monsters[12].def = rand() % 3 + 2;
-    srand(clock()); gs->monsters[12].coins = rand() % 10 + 20;
+    gs->monsters[12].maxHp = rand() % 2 + 7;
+    gs->monsters[12].atk = rand() % 2 + 6;
+    gs->monsters[12].def = rand() % 3 + 2;
+    gs->monsters[12].coins = rand() % 10 + 20;
 
     strcpy(gs->monsters[13].name, "Succubus");
-    srand(clock()); gs->monsters[13].maxHp = rand() % 3 + 7;
-    srand(clock()); gs->monsters[13].atk = rand() % 1 + 6;
-    srand(clock()); gs->monsters[13].def = rand() % 3 + 2;
-    srand(clock()); gs->monsters[13].coins = rand() % 10 + 20;
+    gs->monsters[13].maxHp = rand() % 3 + 7;
+    gs->monsters[13].atk = rand() % 1 + 6;
+    gs->monsters[13].def = rand() % 3 + 2;
+    gs->monsters[13].coins = rand() % 10 + 20;
 
     strcpy(gs->monsters[14].name, "Cão demoníaco");
-    srand(clock()); gs->monsters[14].maxHp = rand() % 2 + 8;
-    srand(clock()); gs->monsters[14].atk = rand() % 2 + 6;
-    srand(clock()); gs->monsters[14].def = rand() % 2 + 3;
-    srand(clock()); gs->monsters[14].coins = rand() % 10 + 20;
+    gs->monsters[14].maxHp = rand() % 2 + 8;
+    gs->monsters[14].atk = rand() % 2 + 6;
+    gs->monsters[14].def = rand() % 2 + 3;
+    gs->monsters[14].coins = rand() % 10 + 20;
 
     strcpy(gs->monsters[XAOPAI].name, "XÃOPAI");
     gs->monsters[XAOPAI].atk = 1;
@@ -622,7 +619,6 @@ void printsTrueEnding(GameState *gs) {
 // ================= [ COMBAT & EVENT FUNCTIONS ] ============================== //
 
 bool chest(GameState *gs, bool *chestOpened) {
-    srand(clock());
     if (rand() % 5 == 0) {
         enemy_t chestEnemy;
         bool run;
@@ -914,6 +910,8 @@ int main() {
         SetConsoleOutputCP(CP_UTF8);
         SetConsoleCP(CP_UTF8);
     #endif
+
+    srand((unsigned)time(NULL));
 
     int iterationCounter = 0;
     int gamesWon = 0;
