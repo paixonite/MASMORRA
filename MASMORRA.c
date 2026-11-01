@@ -919,6 +919,7 @@ int main() {
     int gamesWon = 0;
     int highscores[HIGHSCORES_NUM] = {0};
     char heroName[STR_LENGTH] = "";
+    char savedPronoun = 'o';
     
     int action;
     do {
@@ -931,6 +932,7 @@ int main() {
         gs.isDead = false;
         
         initGameData(&gs);
+        gs.pronoum = savedPronoun;
         
         titleScreen();
         dungeonDialog(&gs);
@@ -1009,10 +1011,13 @@ int main() {
                     break;
                     
                 case 2:
-                    if (highscoresMenu(&gs, highscores))
+                    if (highscoresMenu(&gs, highscores)) {
+                        iterationCounter++;
                         action = 1;
-                    else
+                    } else {
                         action = 3;
+                    }
+                    savedPronoun = gs.pronoum;
                     break;
                     
                 case 3:
