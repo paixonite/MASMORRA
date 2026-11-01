@@ -1048,89 +1048,6 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
     return false;
 }
 
-bool chest(GameState *gs, bool *chestOpened) {
-    if (rand() % 5 == 0) {
-        enemy_t chestEnemy = {0};
-        bool run;
-        printf("> Você encontrou um baú!\n");
-        printf("[1] Chutar violentamente\n");
-        printf("[2] Ignorar\n");
-
-        int action;
-        do {
-            action = readInt();
-            switch(action) {
-                case 0:
-                    showsInfo(gs, NULL);
-                    printf("|Baú|\n");
-                    printf(" ???\n\n");
-                    break;
-
-                case 1:
-                    run = false;
-                    break;
-
-                case 2:
-                    run = true;
-                    break;
-
-                default:
-                    printf("> Comando não encontrado.\n\n");
-                    break;
-            }
-        } while(action != 1 && action != 2);
-
-        if (!run) {
-            strcpy(chestEnemy.name, "Baú de madeira");
-            chestEnemy.maxHp = 100 * gs->currentFloor;
-            chestEnemy.hp = chestEnemy.maxHp;
-            chestEnemy.atk = 0;
-            chestEnemy.def = 0;
-            chestEnemy.coins = rand() % (50 * gs->currentFloor) + 50;
-
-            printf("> Você chuta o baú para tentar abri-lo\n\n");
-            printf("[1] Chutar\n");
-            do {
-                do {
-                    action = readInt();
-                    switch(action) {
-                        case 0:
-                            showsInfo(gs, &chestEnemy);
-                            break;
-                        case 1: {
-                            int kickDamage = rollStat(gs->hero.atk + 10);
-                            bool isCrit = (rand() % 10 == 0);
-                            if (isCrit) {
-                                kickDamage = (kickDamage * 3 + 1) / 2;
-                                printf("\n> GOLPE CRÍTICO! Você chutou violentamente o baú causando %i de dano!\n\n", kickDamage);
-                            } else {
-                                printf("\n> Você chutou violentamente o baú causando %i de dano!\n\n", kickDamage);
-                            }
-                            chestEnemy.hp -= kickDamage;
-                            break;
-                        }
-                        default:
-                            printf("> Comando não encontrado.\n\n");
-                            break;
-                    }
-                } while(action != 1);
-            } while(chestEnemy.hp > 0);
-            
-            gs->score += chestEnemy.coins;
-            gs->hero.coins += chestEnemy.coins;
-            printf("> A tranca quebra e você abre o baú!\n");
-            printf("> Você encontrou %d moedas!\n\n", chestEnemy.coins);
-        }
-
-        if (*chestOpened == false && !run) {
-            gs->secretNumber = rand() % 900 + 100;
-            printf("> Você encontra uma marcação suspeita gravada no fundo do baú: %i\n\n", gs->secretNumber);
-            *chestOpened = true;
-        }
-    }
-    return false;
-}
-
 bool xaopaiInteraction(GameState *gs) {
     printf("> Você desafia o terrível Xãopai!\n\n");
     gs->monsters[XAOPAI].hp = gs->monsters[XAOPAI].maxHp;
@@ -1421,9 +1338,6 @@ int main() {
                         goto TheEnd;
                 }
             }
-            
-            if (chest(&gs, &chestOpened))
-                goto TheEnd;
             
             shopDialog(&gs);
             shopInteraction(&gs, gs.currentFloor);
