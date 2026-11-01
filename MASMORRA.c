@@ -464,7 +464,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
         printf("> Você encontrou um monstro ELITE: %s!\n", gs->monsters[monsterCode].name);
         printf("> Uma poderosa aura intimidadora emana da criatura...\n\n");
     } else {
-        printf("> Você encontrou %s!\n", gs->monsters[monsterCode].name);
+        printf("> Você encontrou %s!\n\n", gs->monsters[monsterCode].name);
     }
     
     do {
@@ -602,7 +602,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
 // ================= [ EVENTS & SHOPS ] ====================================== //
 
 void printShopBox(GameState *gs, int shopCode, bool item1Available, bool item2Available) {
-    printf("\n+----------------- [ LOJA ] -----------------+\n");
+    printf("+----------------- [ LOJA ] -----------------+\n");
     printf("|   Moedas: %i\n", gs->hero.coins);
     printf("+--------------------------------------------+\n");
     printf("|   [1] Sair da loja\n");
@@ -618,7 +618,7 @@ void printShopBox(GameState *gs, int shopCode, bool item1Available, bool item2Av
     }
     if (gs->currentFloor >= 1)
         printf("|   [4] Poção de cura - $50\n");
-    if (gs->currentFloor > 2)
+    if (gs->currentFloor >= 2)
         printf("|   [5] Pingente de vida - $150\n");
     if (gs->hero.potions > 0)
         printf("|   [6] Beber poção de cura (x%i)\n", gs->hero.potions);
@@ -648,13 +648,13 @@ void shopInteraction(GameState *gs, int shopCode) {
             case 2: // BUYS ITEM 1
                 if ((item1Available == true) && (gs->hero.coins >= gs->shops[shopCode].item1Price)) {
                     strcpy(gs->hero.atkItem, gs->shops[shopCode].item1Name);
-                    printf("\n> Você comprou %s.\n", gs->shops[shopCode].item1Name);
+                    printf("\n> Você comprou %s.\n\n", gs->shops[shopCode].item1Name);
                     gs->hero.atk = gs->shops[shopCode].item1atkPoints;
                     item1Available = false;
                     gs->hero.coins -= gs->shops[shopCode].item1Price;
                     gs->score += gs->shops[shopCode].item1Price / 2;
                 } else {
-                    printf("\n> Impossível realizar a ação.\n");
+                    printf("\n> Impossível realizar a ação.\n\n");
                 }
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
@@ -664,13 +664,13 @@ void shopInteraction(GameState *gs, int shopCode) {
             case 3: // BUYS ITEM 2
                 if ((item2Available == true) && (gs->hero.coins >= gs->shops[shopCode].item2Price)) {
                     strcpy(gs->hero.defItem, gs->shops[shopCode].item2Name);
-                    printf("\n> Você comprou %s.\n", gs->shops[shopCode].item2Name);
+                    printf("\n> Você comprou %s.\n\n", gs->shops[shopCode].item2Name);
                     gs->hero.def = gs->shops[shopCode].item2defPoints;
                     item2Available = false;
                     gs->hero.coins -= gs->shops[shopCode].item2Price;
                     gs->score += gs->shops[shopCode].item2Price / 2;
                 } else {
-                    printf("\n> Impossível realizar a ação.\n");
+                    printf("\n> Impossível realizar a ação.\n\n");
                 }
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
@@ -682,9 +682,11 @@ void shopInteraction(GameState *gs, int shopCode) {
                     gs->hero.potions++;
                     gs->hero.coins -= 50;
                     gs->score += 20;
-                    printf("\n> Você comprou uma poção de cura. (Você tem %i)\n", gs->hero.potions);
+                    printf("\n> Você comprou uma poção de cura. (Você tem %i)\n\n", gs->hero.potions);
                 } else if (gs->currentFloor >= 1) {
-                    printf("\n> Impossível realizar a ação.\n");
+                    printf("\n> Impossível realizar a ação.\n\n");
+                } else {
+                    printf("\n> Comando não encontrado.\n\n");
                 }
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
@@ -692,14 +694,16 @@ void shopInteraction(GameState *gs, int shopCode) {
                 break;
                 
             case 5: // BUYS PENDANT
-                if (gs->hero.coins >= 150 && gs->currentFloor > 2) {
-                    printf("\n> Você comprou pingente de vida.\n");
+                if (gs->hero.coins >= 150 && gs->currentFloor >= 2) {
                     gs->hero.coins -= 150;
                     gs->hero.maxHp += 50;
                     gs->hero.hp += 50;
                     gs->score += 150;
-                } else if (gs->currentFloor > 2) {
-                    printf("\n> Impossível realizar a ação.\n");
+                    printf("\n> Você comprou o pingente de vida! Você ganhou +50 de vida máxima! Saúde: %i/%i\n\n", gs->hero.hp, gs->hero.maxHp);
+                } else if (gs->currentFloor >= 2) {
+                    printf("\n> Impossível realizar a ação.\n\n");
+                } else {
+                    printf("\n> Comando não encontrado.\n\n");
                 }
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
@@ -712,11 +716,11 @@ void shopInteraction(GameState *gs, int shopCode) {
                     int heal = 80;
                     if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                     gs->hero.hp += heal;
-                    printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! Saúde: %i/%i\n", heal, gs->hero.hp, gs->hero.maxHp);
+                    printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! Saúde: %i/%i\n\n", heal, gs->hero.hp, gs->hero.maxHp);
                 } else if (gs->hero.potions > 0 && gs->hero.hp >= gs->hero.maxHp) {
-                    printf("\n> Sua saúde já está no máximo!\n");
+                    printf("\n> Sua saúde já está no máximo!\n\n");
                 } else {
-                    printf("\n> Impossível realizar a ação.\n");
+                    printf("\n> Impossível realizar a ação.\n\n");
                 }
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
@@ -724,7 +728,7 @@ void shopInteraction(GameState *gs, int shopCode) {
                 break;
                 
             default:
-                printf("\n> Comando não encontrado.\n");
+                printf("\n> Comando não encontrado.\n\n");
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
                 }
@@ -751,25 +755,25 @@ void shopDialog(GameState *gs) {
             break;
 
         case 1:
-            printf("\n> Você encontra um vendedor ambulante, carregando itens em seu carro de mão.\n");
+            printf("> Você encontra um vendedor ambulante, carregando itens em seu carro de mão.\n");
             printf("Vendedor ambulante: O que estou fazendo aqui? Ah, é só um passeio de negócios.\n");
-            printf("Você acabou de matar potenciais compradores. Você devia cobrir meu prejuízo...\n");
+            printf("Você acabou de matar potenciais compradores. Você devia cobrir meu prejuízo...\n\n");
             break;
 
         case 2:
-            printf("\n> Você encontra uma pequena venda de um goblin morador local.\n");
+            printf("> Você encontra uma pequena venda de um goblin morador local.\n");
             printf("Lojista goblin: Levar o que quiser, só por favor não me matar!\n");
-            printf("(Seu código moral te impede de sair sem pagar)\n");
+            printf("(Seu código moral te impede de sair sem pagar)\n\n");
             break;
 
         case 3:
-            printf("\n> Você encontra um troll ferreiro, forjando ferramentas com os minérios.\n");
+            printf("> Você encontra um troll ferreiro, forjando ferramentas com os minérios.\n");
             printf("Ferreiro: Um humano nesse lugar? Coisa rara de se ver...\n");
-            printf("Posso te dar umas lembrancinhas em troca dessas moedas de ouro.\n");
+            printf("Posso te dar umas lembrancinhas em troca dessas moedas de ouro.\n\n");
             break;
 
         case 4:
-            printf("\n> Um misterioso ser encapuzado aparece das sombras.\n");
+            printf("> Um misterioso ser encapuzado aparece das sombras.\n");
             printf("Ser misterioso: Então é você %c corajos%c %s que busca derrotar o grande Xãopai?\n", 
                    gs->pronoum, gs->pronoum, gs->hero.name);
             printf("Tenha cautela, jovem guerreir%c. O caminho a seguir é perigoso e traiçoeiro.\n\n", 
@@ -777,9 +781,9 @@ void shopDialog(GameState *gs) {
             break;
 
         case 5:
-            printf("\n> Você encontra uma hedionda figura de carne e tentáculos.\n");
+            printf("> Você encontra uma hedionda figura de carne e tentáculos.\n");
             printf("Criatura: (A criatura encara os mais obscuros cantos da sua alma)\n");
-            printf("(Você se sente extremamente desconfortável enquanto compra)\n");
+            printf("(Você se sente extremamente desconfortável enquanto compra)\n\n");
             break;
     }
 }
@@ -926,7 +930,7 @@ bool chest(GameState *gs, bool *chestOpened) {
             chestEnemy.coins = rand() % (50 * gs->currentFloor) + 50;
 
             bool fled = false;
-            printf("> O Baú era um mímico!\n");
+            printf("> O Baú era um mímico!\n\n");
 
             do {
                 printf("[1] Atacar\n");
@@ -1033,7 +1037,7 @@ bool chest(GameState *gs, bool *chestOpened) {
             chestEnemy.def = 0;
             chestEnemy.coins = rand() % (50 * gs->currentFloor) + 50;
 
-            printf("> Você chuta o baú para tentar abri-lo\n");
+            printf("> Você chuta o baú para tentar abri-lo\n\n");
             printf("[1] Chutar\n");
             do {
                 do {
@@ -1077,7 +1081,7 @@ bool chest(GameState *gs, bool *chestOpened) {
 }
 
 bool xaopaiInteraction(GameState *gs) {
-    printf("> Você desafia o terrível Xãopai!\n");
+    printf("> Você desafia o terrível Xãopai!\n\n");
     gs->monsters[XAOPAI].hp = gs->monsters[XAOPAI].maxHp;
     
     do {
@@ -1337,7 +1341,7 @@ int main() {
         
         printf("\n+---------------------------------------------------------------------------+\n");
         printf(  "| DICA: Digite '0' a qualquer momento para mostrar status do herói/oponente |\n");
-        printf(  "+---------------------------------------------------------------------------+\n");
+        printf(  "+---------------------------------------------------------------------------+\n\n");
         
         shopInteraction(&gs, gs.currentFloor);
         
