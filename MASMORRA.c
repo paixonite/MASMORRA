@@ -818,19 +818,16 @@ void ending(GameState *gs) {
 }
 
 void updatesHighscores(GameState *gs, int* highscores) {
-    FILE *file;
+    FILE *file = fopen("Highscores.bin", "rb");
 
-    file = fopen("Highscores.bin", "rb+");
-
-    if (file == NULL) {
-        file = fopen("Highscores.bin", "wb+");
-        if (file == NULL) {
-            perror("Error opening file");
-            return;
+    if (file != NULL) {
+        size_t readCount = fread(highscores, sizeof(int), HIGHSCORES_NUM, file);
+        for (size_t i = readCount; i < HIGHSCORES_NUM; ++i) {
+            highscores[i] = 0;
         }
-    } else {
-        fread(highscores, sizeof(int), HIGHSCORES_NUM, file);
         fclose(file);
+    } else {
+        memset(highscores, 0, sizeof(int) * HIGHSCORES_NUM);
     }
 
     highscores[HIGHSCORES_NUM - 1] = gs->score;
