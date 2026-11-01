@@ -96,7 +96,7 @@ int readInt() {
     while (true) {
         // Se o buffer estiver vazio ou no final da linha, lê uma nova linha
         while (inputPtr == NULL || *inputPtr == '\0') {
-            printf("> ");
+            printf("< ");
             fflush(stdout);
             if (fgets(inputLine, sizeof(inputLine), stdin) == NULL) {
                 if (feof(stdin)) exit(0);
@@ -135,7 +135,7 @@ int readInt() {
 void readString(char* buffer, int maxLength) {
     inputPtr = NULL; // Descarta tokens pendentes ao ler string
     while (true) {
-        printf("> ");
+        printf("< ");
         fflush(stdout);
         if (fgets(buffer, maxLength, stdin) != NULL) {
             buffer[strcspn(buffer, "\n")] = 0; // Remove o \n do final
@@ -345,7 +345,7 @@ void printHpBar(int current, int max) {
 
 void showsInfo(GameState *gs, const enemy_t *enemy) {
     printf("\n+---------------- [ STATUS ] ----------------+\n");
-    printf("| > %s\n", gs->hero.name);
+    printf("| - %s\n", gs->hero.name);
     printf("|   Saúde:  ");
     printHpBar(gs->hero.hp, gs->hero.maxHp);
     printf("|   Poções: %i\n", gs->hero.potions);
@@ -355,7 +355,7 @@ void showsInfo(GameState *gs, const enemy_t *enemy) {
 
     if (enemy != NULL) {
         printf("+--------------------------------------------+\n");
-        printf("| > %s\n", enemy->name);
+        printf("| - %s\n", enemy->name);
         printf("|   Saúde:  ");
         printHpBar(enemy->hp, enemy->maxHp);
         printf("|   Ataque: %i\n", enemy->atk);
@@ -417,7 +417,7 @@ void printsAmulet() {
 // ================= [ COMBAT SYSTEM ] ======================================== //
 
 bool monsterInteraction(GameState *gs, int monsterCode) {
-    printf("Você encontrou %s!\n", gs->monsters[monsterCode].name);
+    printf("> Você encontrou %s!\n", gs->monsters[monsterCode].name);
     gs->monsters[monsterCode].hp = gs->monsters[monsterCode].maxHp;
     
     do {
@@ -658,30 +658,31 @@ int compareHighscores(const void* a, const void* b) {
 void shopDialog(GameState *gs) {
     switch (gs->currentFloor) {
         case 0:
-            printf("\nLojista: Então você quer se aventurar pela terrível masmorra, %s?\n", gs->hero.name);
+            printf("\n> Antes de começar sua aventura, você entra em uma loja.\n");
+            printf("Lojista: Então você quer se aventurar pela terrível masmorra, %s?\n", gs->hero.name);
             printf("Se fosse você eu não iria de mãos atadas...\n");
             break;
 
         case 1:
-            printf("\nVocê encontra um vendedor ambulante, carregando itens em seu carro de mão.\n");
+            printf("\n> Você encontra um vendedor ambulante, carregando itens em seu carro de mão.\n");
             printf("Vendedor ambulante: O que estou fazendo aqui? Ah, é só um passeio de negócios.\n");
             printf("Você acabou de matar potenciais compradores. Você devia cobrir meu prejuízo...\n");
             break;
 
         case 2:
-            printf("\nVocê encontra uma pequena venda de um goblin morador local.\n");
+            printf("\n> Você encontra uma pequena venda de um goblin morador local.\n");
             printf("Lojista goblin: Levar o que quiser, só por favor não me matar!\n");
             printf("(Seu código moral te impede de sair sem pagar)\n");
             break;
 
         case 3:
-            printf("\nVocê encontra um troll ferreiro, forjando ferramentas com os minérios.\n");
+            printf("\n> Você encontra um troll ferreiro, forjando ferramentas com os minérios.\n");
             printf("Ferreiro: Um humano nesse lugar? Coisa rara de se ver...\n");
             printf("Posso te dar umas lembrancinhas em troca dessas moedas de ouro.\n");
             break;
 
         case 4:
-            printf("\nUm misterioso ser encapuzado aparece das sombras.\n");
+            printf("\n> Um misterioso ser encapuzado aparece das sombras.\n");
             printf("Ser misterioso: Então é você %c corajos%c %s que busca derrotar o grande Xãopai?\n", 
                    gs->pronoum, gs->pronoum, gs->hero.name);
             printf("Tenha cautela, jovem guerreir%c. O caminho a seguir é perigoso e traiçoeiro.\n\n", 
@@ -689,7 +690,7 @@ void shopDialog(GameState *gs) {
             break;
 
         case 5:
-            printf("\nVocê encontra uma hedionda figura de carne e tentáculos.\n");
+            printf("\n> Você encontra uma hedionda figura de carne e tentáculos.\n");
             printf("Criatura: (A criatura encara os mais obscuros cantos da sua alma)\n");
             printf("(Você se sente extremamente desconfortável enquanto compra)\n");
             break;
@@ -704,8 +705,7 @@ void dungeonDialog(GameState *gs) {
             printf("================================================================================\n\n");
             printf("  Diversos aventureiros da cidade acima adentraram a masmorra antes de você,\n");
             printf("  mas poucos foram vistos novamente. Diz-se que um mal ancestral espreita nas\n");
-            printf("  profundezas, o imensamente poderoso espírito Xãopai.\n\n");
-            printf("  Antes de começar sua aventura, você entra em uma loja.\n");
+            printf("  profundezas, o imensamente poderoso espírito Xãopai.\n");
             break;
 
         case 1:
@@ -786,7 +786,7 @@ bool chest(GameState *gs, bool *chestOpened) {
     if (rand() % 5 == 0) {
         enemy_t chestEnemy = {0};
         bool run;
-        printf("Você encontrou um baú!\n");
+        printf("> Você encontrou um baú!\n");
         printf("[1] Chutar violentamente\n");
         printf("[2] Ignorar\n");
 
@@ -839,7 +839,7 @@ bool chest(GameState *gs, bool *chestOpened) {
             chestEnemy.coins = rand() % (50 * gs->currentFloor) + 50;
 
             bool fled = false;
-            printf("O Baú era um mímico!\n");
+            printf("> O Baú era um mímico!\n");
 
             do {
                 printf("[1] Atacar\n");
@@ -923,7 +923,7 @@ bool chest(GameState *gs, bool *chestOpened) {
             chestEnemy.def = 0;
             chestEnemy.coins = rand() % (50 * gs->currentFloor) + 50;
 
-            printf("Você chuta o baú para tentar abri-lo\n");
+            printf("> Você chuta o baú para tentar abri-lo\n");
             printf("[1] Chutar\n");
             do {
                 do {
@@ -961,7 +961,7 @@ bool chest(GameState *gs, bool *chestOpened) {
 }
 
 bool xaopaiInteraction(GameState *gs) {
-    printf("Você desafia o terrível Xãopai!\n");
+    printf("> Você desafia o terrível Xãopai!\n");
     gs->monsters[XAOPAI].hp = gs->monsters[XAOPAI].maxHp;
     
     do {
