@@ -143,151 +143,151 @@ void initGameData(GameState *gs) {
     gs->pronoum = 'o';
 
     // Inicializa o Herói
-    gs->hero.coins = 15;
-    gs->hero.hp = 10;
-    gs->hero.maxHp = 10;
-    gs->hero.atk = 1;
+    gs->hero.coins = 150;
+    gs->hero.hp = 100;
+    gs->hero.maxHp = 100;
+    gs->hero.atk = 10;
     gs->hero.def = 0;
     gs->hero.potions = 0;
     strcpy(gs->hero.atkItem, "Seus punhos");
     strcpy(gs->hero.defItem, "Nada");
 
     strcpy(gs->monsters[0].name, "Ratazana gigante");
-    gs->monsters[0].maxHp = rand() % 2 + 3;
-    gs->monsters[0].atk = rand() % 3 + 1;
-    gs->monsters[0].def = rand() % 1 + 0;
-    gs->monsters[0].coins = rand() % 5 + 5;
+    gs->monsters[0].maxHp = rand() % 11 + 30;
+    gs->monsters[0].atk = rand() % 21 + 10;
+    gs->monsters[0].def = 0;
+    gs->monsters[0].coins = rand() % 41 + 50;
 
     strcpy(gs->monsters[1].name, "Cobra");
-    gs->monsters[1].maxHp = rand() % 1 + 3;
-    gs->monsters[1].atk = rand() % 2 + 2;
-    gs->monsters[1].def = rand() % 1 + 0;
-    gs->monsters[1].coins = rand() % 5 + 5;
+    gs->monsters[1].maxHp = 30;
+    gs->monsters[1].atk = rand() % 11 + 20;
+    gs->monsters[1].def = 0;
+    gs->monsters[1].coins = rand() % 41 + 50;
 
     strcpy(gs->monsters[2].name, "Gosma gigante");
-    gs->monsters[2].maxHp = rand() % 2 + 3;
-    gs->monsters[2].atk = rand() % 2 + 2;
-    gs->monsters[2].def = rand() % 1 + 0;
-    gs->monsters[2].coins = rand() % 5 + 5;
+    gs->monsters[2].maxHp = rand() % 11 + 30;
+    gs->monsters[2].atk = rand() % 11 + 20;
+    gs->monsters[2].def = 0;
+    gs->monsters[2].coins = rand() % 41 + 50;
 
     strcpy(gs->monsters[3].name, "Ladrão louco");
-    gs->monsters[3].maxHp = rand() % 2 + 3;
-    gs->monsters[3].atk = rand() % 3 + 2;
-    gs->monsters[3].def = rand() % 2 + 0;
-    gs->monsters[3].coins = rand() % 5 + 6;
+    gs->monsters[3].maxHp = rand() % 11 + 30;
+    gs->monsters[3].atk = rand() % 21 + 20;
+    gs->monsters[3].def = rand() % 11 + 0;
+    gs->monsters[3].coins = rand() % 41 + 60;
 
     strcpy(gs->monsters[4].name, "Esqueleto");
-    gs->monsters[4].maxHp = rand() % 1 + 3;
-    gs->monsters[4].atk = rand() % 2 + 3;
-    gs->monsters[4].def = rand() % 2 + 0;
-    gs->monsters[4].coins = rand() % 5 + 7;
+    gs->monsters[4].maxHp = 30;
+    gs->monsters[4].atk = rand() % 11 + 30;
+    gs->monsters[4].def = rand() % 11 + 0;
+    gs->monsters[4].coins = rand() % 41 + 70;
 
     strcpy(gs->monsters[5].name, "Guarda da prisão");
-    gs->monsters[5].maxHp = rand() % 2 + 3;
-    gs->monsters[5].atk = rand() % 2 + 3;
-    gs->monsters[5].def = rand() % 2 + 0;
-    gs->monsters[5].coins = rand() % 5 + 7;
+    gs->monsters[5].maxHp = rand() % 11 + 30;
+    gs->monsters[5].atk = rand() % 11 + 30;
+    gs->monsters[5].def = rand() % 11 + 0;
+    gs->monsters[5].coins = rand() % 41 + 70;
 
     strcpy(gs->monsters[6].name, "Morcego vampiro");
-    gs->monsters[6].maxHp = rand() % 2 + 4;
-    gs->monsters[6].atk = rand() % 2 + 2;
-    gs->monsters[6].def = rand() % 2 + 1;
-    gs->monsters[6].coins = rand() % 5 + 10;
+    gs->monsters[6].maxHp = rand() % 11 + 40;
+    gs->monsters[6].atk = rand() % 11 + 20;
+    gs->monsters[6].def = rand() % 11 + 10;
+    gs->monsters[6].coins = rand() % 41 + 100;
 
     strcpy(gs->monsters[7].name, "Aranha gigante");
-    gs->monsters[7].maxHp = rand() % 2 + 5;
-    gs->monsters[7].atk = rand() % 2 + 3;
-    gs->monsters[7].def = rand() % 2 + 1;
-    gs->monsters[7].coins = rand() % 5 + 10;
+    gs->monsters[7].maxHp = rand() % 11 + 50;
+    gs->monsters[7].atk = rand() % 11 + 30;
+    gs->monsters[7].def = rand() % 11 + 10;
+    gs->monsters[7].coins = rand() % 41 + 100;
 
     strcpy(gs->monsters[8].name, "Troll selvagem");
-    gs->monsters[8].maxHp = rand() % 3 + 5;
-    gs->monsters[8].atk = rand() % 1 + 4;
-    gs->monsters[8].def = rand() % 1 + 2;
-    gs->monsters[8].coins = rand() % 5 + 10;
+    gs->monsters[8].maxHp = rand() % 21 + 50;
+    gs->monsters[8].atk = 40;
+    gs->monsters[8].def = 20;
+    gs->monsters[8].coins = rand() % 41 + 100;
 
     strcpy(gs->monsters[9].name, "Soldado anão");
-    gs->monsters[9].maxHp = rand() % 2 + 6;
-    gs->monsters[9].atk = rand() % 3 + 4;
-    gs->monsters[9].def = rand() % 2 + 1;
-    gs->monsters[9].coins = rand() % 6 + 13;
+    gs->monsters[9].maxHp = rand() % 11 + 60;
+    gs->monsters[9].atk = rand() % 21 + 40;
+    gs->monsters[9].def = rand() % 11 + 10;
+    gs->monsters[9].coins = rand() % 51 + 130;
 
     strcpy(gs->monsters[10].name, "Monge anão");
-    gs->monsters[10].maxHp = rand() % 2 + 4;
-    gs->monsters[10].atk = rand() % 2 + 5;
-    gs->monsters[10].def = rand() % 1 + 3;
-    gs->monsters[10].coins = rand() % 7 + 13;
+    gs->monsters[10].maxHp = rand() % 11 + 40;
+    gs->monsters[10].atk = rand() % 11 + 50;
+    gs->monsters[10].def = 30;
+    gs->monsters[10].coins = rand() % 61 + 130;
 
     strcpy(gs->monsters[11].name, "Bruxo anão");
-    gs->monsters[11].maxHp = rand() % 2 + 3;
-    gs->monsters[11].atk = rand() % 3 + 5;
-    gs->monsters[11].def = rand() % 1 + 3;
-    gs->monsters[11].coins = rand() % 7 + 14;
+    gs->monsters[11].maxHp = rand() % 11 + 30;
+    gs->monsters[11].atk = rand() % 21 + 50;
+    gs->monsters[11].def = 30;
+    gs->monsters[11].coins = rand() % 61 + 140;
 
     strcpy(gs->monsters[12].name, "Demônio estripador");
-    gs->monsters[12].maxHp = rand() % 2 + 7;
-    gs->monsters[12].atk = rand() % 2 + 6;
-    gs->monsters[12].def = rand() % 3 + 2;
-    gs->monsters[12].coins = rand() % 10 + 20;
+    gs->monsters[12].maxHp = rand() % 11 + 70;
+    gs->monsters[12].atk = rand() % 11 + 60;
+    gs->monsters[12].def = rand() % 21 + 20;
+    gs->monsters[12].coins = rand() % 91 + 200;
 
     strcpy(gs->monsters[13].name, "Succubus");
-    gs->monsters[13].maxHp = rand() % 3 + 7;
-    gs->monsters[13].atk = rand() % 1 + 6;
-    gs->monsters[13].def = rand() % 3 + 2;
-    gs->monsters[13].coins = rand() % 10 + 20;
+    gs->monsters[13].maxHp = rand() % 21 + 70;
+    gs->monsters[13].atk = 60;
+    gs->monsters[13].def = rand() % 21 + 20;
+    gs->monsters[13].coins = rand() % 91 + 200;
 
     strcpy(gs->monsters[14].name, "Cão demoníaco");
-    gs->monsters[14].maxHp = rand() % 2 + 8;
-    gs->monsters[14].atk = rand() % 2 + 6;
-    gs->monsters[14].def = rand() % 2 + 3;
-    gs->monsters[14].coins = rand() % 10 + 20;
+    gs->monsters[14].maxHp = rand() % 11 + 80;
+    gs->monsters[14].atk = rand() % 11 + 60;
+    gs->monsters[14].def = rand() % 11 + 30;
+    gs->monsters[14].coins = rand() % 91 + 200;
 
     strcpy(gs->monsters[XAOPAI].name, "XÃOPAI");
-    gs->monsters[XAOPAI].atk = 1;
+    gs->monsters[XAOPAI].atk = 10;
     gs->monsters[XAOPAI].def = 0;
 
     // Inicializa lojas
     strcpy(gs->shops[0].item1Name, "Bastão de madeira");
-    gs->shops[0].item1atkPoints = 2;
-    gs->shops[0].item1Price = 10;
+    gs->shops[0].item1atkPoints = 20;
+    gs->shops[0].item1Price = 100;
     strcpy(gs->shops[0].item2Name, "Escudo pequeno de madeira");
-    gs->shops[0].item2defPoints = 1;
-    gs->shops[0].item2Price = 10;
+    gs->shops[0].item2defPoints = 10;
+    gs->shops[0].item2Price = 100;
 
     strcpy(gs->shops[1].item1Name, "Espada curta de cobre");
-    gs->shops[1].item1atkPoints = 3;
-    gs->shops[1].item1Price = 15;
+    gs->shops[1].item1atkPoints = 30;
+    gs->shops[1].item1Price = 150;
     strcpy(gs->shops[1].item2Name, "Escudo redondo de cobre");
-    gs->shops[1].item2defPoints = 2;
-    gs->shops[1].item2Price = 15;
+    gs->shops[1].item2defPoints = 20;
+    gs->shops[1].item2Price = 150;
 
     strcpy(gs->shops[2].item1Name, "Espada de ferro");
-    gs->shops[2].item1atkPoints = 4;
-    gs->shops[2].item1Price = 20;
+    gs->shops[2].item1atkPoints = 40;
+    gs->shops[2].item1Price = 200;
     strcpy(gs->shops[2].item2Name, "Escudo de ferro");
-    gs->shops[2].item2defPoints = 3;
-    gs->shops[2].item2Price = 20;
+    gs->shops[2].item2defPoints = 30;
+    gs->shops[2].item2Price = 200;
 
     strcpy(gs->shops[3].item1Name, "Espada longa de aço");
-    gs->shops[3].item1atkPoints = 5;
-    gs->shops[3].item1Price = 30;
+    gs->shops[3].item1atkPoints = 50;
+    gs->shops[3].item1Price = 300;
     strcpy(gs->shops[3].item2Name, "Escudo grande de aço");
-    gs->shops[3].item2defPoints = 4;
-    gs->shops[3].item2Price = 30;
+    gs->shops[3].item2defPoints = 40;
+    gs->shops[3].item2Price = 300;
 
     strcpy(gs->shops[4].item1Name, "Espada encantada de diamante");
-    gs->shops[4].item1atkPoints = 6;
-    gs->shops[4].item1Price = 40;
+    gs->shops[4].item1atkPoints = 60;
+    gs->shops[4].item1Price = 400;
     strcpy(gs->shops[4].item2Name, "Escudo largo de diamante");
-    gs->shops[4].item2defPoints = 5;
-    gs->shops[4].item2Price = 40;
+    gs->shops[4].item2defPoints = 50;
+    gs->shops[4].item2Price = 400;
 
     strcpy(gs->shops[5].item1Name, "Excalibur Lendária");
-    gs->shops[5].item1atkPoints = 8;
-    gs->shops[5].item1Price = 55;
+    gs->shops[5].item1atkPoints = 80;
+    gs->shops[5].item1Price = 550;
     strcpy(gs->shops[5].item2Name, "Égide Mítica");
-    gs->shops[5].item2defPoints = 15;
-    gs->shops[5].item2Price = 50;
+    gs->shops[5].item2defPoints = 150;
+    gs->shops[5].item2Price = 500;
 }
 
 // ================= [ UI & ASCII ART ] ======================================= //
@@ -332,7 +332,7 @@ void printHpBar(int current, int max) {
     printf("] %i/%i\n", current, max);
 }
 
-void showsInfo(GameState *gs, int monsterCode) {
+void showsInfo(GameState *gs, const enemy_t *enemy) {
     printf("\n+---------------- [ STATUS ] ----------------+\n");
     printf("| > %s\n", gs->hero.name);
     printf("|   Saúde:  ");
@@ -342,13 +342,13 @@ void showsInfo(GameState *gs, int monsterCode) {
     printf("|   Ataque: %i (%s)\n", gs->hero.atk, gs->hero.atkItem);
     printf("|   Defesa: %i (%s)\n", gs->hero.def, gs->hero.defItem);
 
-    if (monsterCode >= 0) {
+    if (enemy != NULL) {
         printf("+--------------------------------------------+\n");
-        printf("| > %s\n", gs->monsters[monsterCode].name);
+        printf("| > %s\n", enemy->name);
         printf("|   Saúde:  ");
-        printHpBar(gs->monsters[monsterCode].hp, gs->monsters[monsterCode].maxHp);
-        printf("|   Ataque: %i\n", gs->monsters[monsterCode].atk);
-        printf("|   Defesa: %i\n", gs->monsters[monsterCode].def);
+        printHpBar(enemy->hp, enemy->maxHp);
+        printf("|   Ataque: %i\n", enemy->atk);
+        printf("|   Defesa: %i\n", enemy->def);
     }
     printf("+--------------------------------------------+\n\n");
 }
@@ -418,7 +418,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
         int action = readInt();
 
         if (action == 0) {
-            showsInfo(gs, monsterCode);
+            showsInfo(gs, &gs->monsters[monsterCode]);
         } else if (action == 1) {
             // Lógica de dano
             if (gs->monsters[monsterCode].def >= gs->hero.atk) {
@@ -480,7 +480,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
                 printf("\n> Sua saúde já está no máximo!\n\n");
             } else {
                 gs->hero.potions--;
-                int heal = 8;
+                int heal = 80;
                 if (gs->hero.hp + heal > gs->hero.maxHp) {
                     heal = gs->hero.maxHp - gs->hero.hp;
                 }
@@ -493,7 +493,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
         }
     } while (gs->monsters[monsterCode].hp > 0);
 
-    gs->score += 10;
+    gs->score += 100;
     gs->hero.coins += gs->monsters[monsterCode].coins;
     printf("> Você derrotou %s!\n> Você encontrou %i moedas!\n\n", gs->monsters[monsterCode].name, gs->monsters[monsterCode].coins);
     
@@ -511,9 +511,9 @@ void shopInteraction(GameState *gs, int shopCode) {
     printf("[2] %s - $%i\n", gs->shops[shopCode].item1Name, gs->shops[shopCode].item1Price);
     printf("[3] %s - $%i\n", gs->shops[shopCode].item2Name, gs->shops[shopCode].item2Price);
     if (gs->currentFloor >= 1)
-        printf("[4] Poção de cura - $5\n");
+        printf("[4] Poção de cura - $50\n");
     if (gs->currentFloor > 2)
-        printf("[5] Pingente de vida - $15\n");
+        printf("[5] Pingente de vida - $150\n");
     if (gs->hero.potions > 0)
         printf("[6] Beber poção de cura (x%i)\n", gs->hero.potions);
     
@@ -522,7 +522,7 @@ void shopInteraction(GameState *gs, int shopCode) {
         action = readInt();
         switch (action) {
             case 0: // INFO
-                showsInfo(gs, -1);
+                showsInfo(gs, NULL);
                 break;
                 
             case 1: // LEAVES THE SHOP
@@ -553,22 +553,22 @@ void shopInteraction(GameState *gs, int shopCode) {
                 break;
                 
             case 4: // BUYS POTION
-                if ((gs->hero.coins >= 5) && (gs->currentFloor >= 1)) {
+                if ((gs->hero.coins >= 50) && (gs->currentFloor >= 1)) {
                     gs->hero.potions++;
-                    gs->hero.coins -= 5;
-                    gs->score += 2;
+                    gs->hero.coins -= 50;
+                    gs->score += 20;
                     printf("Você comprou uma poção de cura. (Você tem %i)\n", gs->hero.potions);
                 } else if (gs->currentFloor >= 1)
                     fprintf(stderr, "Impossível realizar a ação.\n");
                 break;
                 
             case 5: // BUYS PENDANT
-                if (gs->hero.coins >= 15 && gs->currentFloor > 2) {
+                if (gs->hero.coins >= 150 && gs->currentFloor > 2) {
                     printf("Você comprou pingente de vida.\n");
-                    gs->hero.coins -= 15;
-                    gs->hero.maxHp += 5;
-                    gs->hero.hp += 5;
-                    gs->score += 15;
+                    gs->hero.coins -= 150;
+                    gs->hero.maxHp += 50;
+                    gs->hero.hp += 50;
+                    gs->score += 150;
                 } else if (gs->currentFloor > 2)
                     fprintf(stderr, "Impossível realizar a ação.\n");
                 break;
@@ -576,7 +576,7 @@ void shopInteraction(GameState *gs, int shopCode) {
             case 6: // DRINKS POTION IN SHOP
                 if (gs->hero.potions > 0 && gs->hero.hp < gs->hero.maxHp) {
                     gs->hero.potions--;
-                    int heal = 8;
+                    int heal = 80;
                     if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                     gs->hero.hp += heal;
                     printf("Você bebeu uma poção de cura e recuperou %i de vida! Saúde: %i/%i\n", heal, gs->hero.hp, gs->hero.maxHp);
@@ -724,7 +724,7 @@ void printsTrueEnding(GameState *gs) {
 
 bool chest(GameState *gs, bool *chestOpened) {
     if (rand() % 5 == 0) {
-        enemy_t chestEnemy;
+        enemy_t chestEnemy = {0};
         bool run;
         printf("Você encontrou um baú!\n");
         printf("[1] Chutar violentamente\n");
@@ -735,9 +735,9 @@ bool chest(GameState *gs, bool *chestOpened) {
             action = readInt();
             switch(action) {
                 case 0:
-                    showsInfo(gs, -1);
+                    showsInfo(gs, NULL);
                     printf("|Baú|\n");
-                    printf(" ???\n");
+                    printf(" ???\n\n");
                     break;
 
                 case 1:
@@ -758,24 +758,25 @@ bool chest(GameState *gs, bool *chestOpened) {
             strcpy(chestEnemy.name, "Mímico");
             switch(gs->currentFloor) {
                 case 1:
-                    chestEnemy.maxHp = rand() % 3 + 4;
+                    chestEnemy.maxHp = rand() % 21 + 40;
                     break;
                 case 2:
-                    chestEnemy.maxHp = rand() % 4 + 6;
+                    chestEnemy.maxHp = rand() % 31 + 60;
                     break;
                 case 3:
-                    chestEnemy.maxHp = rand() % 4 + 8;
+                    chestEnemy.maxHp = rand() % 31 + 80;
                     break;
                 case 4:
-                    chestEnemy.maxHp = rand() % 4 + 9;
+                    chestEnemy.maxHp = rand() % 31 + 90;
                     break;
                 case 5:
-                    chestEnemy.maxHp = rand() % 4 + 10;
+                    chestEnemy.maxHp = rand() % 31 + 100;
                     break;
             }
-            chestEnemy.atk = gs->hero.def + 1;
+            chestEnemy.atk = gs->hero.def + 10;
+            chestEnemy.def = 0;
             chestEnemy.hp = chestEnemy.maxHp;
-            chestEnemy.coins = rand() % (5 * gs->currentFloor) + 5;
+            chestEnemy.coins = rand() % (50 * gs->currentFloor) + 50;
 
             bool fled = false;
             printf("O Baú era um mímico!\n");
@@ -788,7 +789,7 @@ bool chest(GameState *gs, bool *chestOpened) {
                 action = readInt();
                 switch(action) {
                     case 0:
-                        showsInfo(gs, -1);
+                        showsInfo(gs, &chestEnemy);
                         break;
                     case 1:
                         chestEnemy.hp -= gs->hero.atk;
@@ -835,7 +836,7 @@ bool chest(GameState *gs, bool *chestOpened) {
                             printf("\n> Sua saúde já está no máximo!\n\n");
                         } else {
                             gs->hero.potions--;
-                            int heal = 8;
+                            int heal = 80;
                             if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                             gs->hero.hp += heal;
                             printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", heal, gs->hero.potions);
@@ -855,9 +856,12 @@ bool chest(GameState *gs, bool *chestOpened) {
             }
 
         } else if (!run) {
-            chestEnemy.maxHp = 10 * gs->currentFloor;
+            strcpy(chestEnemy.name, "Baú de madeira");
+            chestEnemy.maxHp = 100 * gs->currentFloor;
             chestEnemy.hp = chestEnemy.maxHp;
-            chestEnemy.coins = rand() % (5 * gs->currentFloor) + 5;
+            chestEnemy.atk = 0;
+            chestEnemy.def = 0;
+            chestEnemy.coins = rand() % (50 * gs->currentFloor) + 50;
 
             printf("Você chuta o baú para tentar abri-lo\n");
             printf("[1] Chutar\n");
@@ -866,10 +870,10 @@ bool chest(GameState *gs, bool *chestOpened) {
                     action = readInt();
                     switch(action) {
                         case 0:
-                            showsInfo(gs, -1);
+                            showsInfo(gs, &chestEnemy);
                             break;
                         case 1: {
-                            int kickDamage = gs->hero.atk + 1;
+                            int kickDamage = gs->hero.atk + 10;
                             chestEnemy.hp -= kickDamage;
                             printf("\n> Você chutou violentamente o baú causando %i de dano!\n\n", kickDamage);
                             break;
@@ -908,7 +912,7 @@ bool xaopaiInteraction(GameState *gs) {
         int action = readInt();
         switch(action) {
             case 0: // INFO
-                showsInfo(gs, XAOPAI);
+                showsInfo(gs, &gs->monsters[XAOPAI]);
                 break;
 
             case 1: // ATTACK
@@ -947,7 +951,7 @@ bool xaopaiInteraction(GameState *gs) {
                     printf("\n> Sua saúde já está no máximo!\n\n");
                 } else {
                     gs->hero.potions--;
-                    int heal = 8;
+                    int heal = 80;
                     if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                     gs->hero.hp += heal;
                     printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", heal, gs->hero.potions);
@@ -960,7 +964,7 @@ bool xaopaiInteraction(GameState *gs) {
         }
     } while(gs->monsters[XAOPAI].hp > 0);
 
-    gs->score += 1000;
+    gs->score += 10000;
     printf("> VOCÊ DERROTOU O ESPÍRITO DE XÃOPAI!\n\n");
     return false;
 }
@@ -978,7 +982,7 @@ void ending(GameState *gs) {
         int action = readInt();
 
         if (action == 0) {
-            showsInfo(gs, -1);
+            showsInfo(gs, NULL);
         }
         else if (action == 1) {
             printsAmulet();
@@ -1137,7 +1141,7 @@ int main() {
         }
         if (strcmp(lowerName, "paixao") == 0 || strcmp(lowerName, "paixão") == 0) {
             printf("Lojista: Olha só! O próprio criador do jogo! Bom rever você.\n");
-            gs.hero.coins += 999;
+            gs.hero.coins += 9990;
         }
         
         printf("\n+---------------------------------------------------------------------------+\n");
@@ -1170,7 +1174,7 @@ int main() {
         clearScreen();
         dungeonDialog(&gs);
         printsXaopai();
-        gs.monsters[XAOPAI].maxHp = 175 - gs.hero.def * 3;
+        gs.monsters[XAOPAI].maxHp = 1750 - gs.hero.def * 3;
         gs.isDead = xaopaiInteraction(&gs);
         
         if (gs.isDead)
