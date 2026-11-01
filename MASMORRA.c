@@ -486,18 +486,6 @@ int compareInt(const void* a, const void* b) {
     return *num2 - *num1;
 }
 
-void sortHighscores(int* highscores) {
-    for (int i = 0; i < HIGHSCORES_NUM - 1; i++) {
-        for (int j = 0; j < HIGHSCORES_NUM - i - 1; j++) {
-            if (highscores[j] < highscores[j + 1]) {
-                int temp = highscores[j];
-                highscores[j] = highscores[j + 1];
-                highscores[j + 1] = temp;
-            }
-        }
-    }
-}
-
 // ================= [ DIALOG ] =============================== //
 
 void shopDialog(GameState *gs) {
@@ -847,7 +835,7 @@ void updatesHighscores(GameState *gs, int* highscores) {
 
     highscores[HIGHSCORES_NUM - 1] = gs->score;
 
-    sortHighscores(highscores);
+    qsort(highscores, HIGHSCORES_NUM, sizeof(int), compareInt);
 
     file = fopen("Highscores.bin", "wb");
     if (file == NULL) {
