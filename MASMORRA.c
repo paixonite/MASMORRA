@@ -746,7 +746,6 @@ int compareHighscores(const void* a, const void* b) {
 void shopDialog(GameState *gs) {
     switch (gs->currentFloor) {
         case 0:
-            printf("\n> Antes de começar sua aventura, você entra em uma loja.\n");
             printf("Lojista: Então você quer se aventurar pela terrível masmorra, %s?\n", gs->hero.name);
             printf("Se fosse você eu não iria de mãos atadas...\n");
             break;
@@ -1317,6 +1316,7 @@ int main() {
         titleScreen();
         dungeonDialog(&gs);
         
+        printf("\n> Antes de começar sua aventura, você entra em uma loja.\n");
         if (iterationCounter == 0) {
             printf("Lojista: Você deve ser nov%c por aqui. Qual seu nome, viajante?\n", gs.pronoum);
             readString(heroName, STR_LENGTH);
@@ -1333,11 +1333,12 @@ int main() {
             gs.hero.coins += 9990;
         }
         
+        shopDialog(&gs);
+        
         printf("\n+---------------------------------------------------------------------------+\n");
         printf(  "| DICA: Digite '0' a qualquer momento para mostrar status do herói/oponente |\n");
         printf(  "+---------------------------------------------------------------------------+\n");
         
-        shopDialog(&gs);
         shopInteraction(&gs, gs.currentFloor);
         
         for (int floor = 0; floor < 5; ++floor) {
