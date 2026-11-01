@@ -989,7 +989,6 @@ int main() {
         
         TheEnd:
         
-        highscores[iterationCounter] = gs.score;
         if (!gs.isDead)
             gamesWon++;
         else
