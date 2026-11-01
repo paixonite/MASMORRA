@@ -508,7 +508,7 @@ void shopDialog(GameState *gs) {
             break;
 
         case 1:
-            printf("\nVocê encontra uma vendedor ambulante, carregando itens em seu carro de mão.\n");
+            printf("\nVocê encontra um vendedor ambulante, carregando itens em seu carro de mão.\n");
             printf("Vendedor ambulante: O que estou fazendo aqui? Ah, é só um passeio de negócios.\n");
             printf("Você acabou de matar potenciais compradores. Você devia cobrir meu prejuízo...\n");
             break;
@@ -520,14 +520,14 @@ void shopDialog(GameState *gs) {
             break;
 
         case 3:
-            printf("\nVocê encontra uma troll ferreiro, forjando ferramentas com os minérios.\n");
+            printf("\nVocê encontra um troll ferreiro, forjando ferramentas com os minérios.\n");
             printf("Ferreiro: Um humano nesse lugar? Coisa rara de se ver...\n");
             printf("Posso te dar umas lembrancinhas em troca dessas moedas de ouro.\n");
             break;
 
         case 4:
             printf("\nUm misterioso ser encapuzado aparece das sombras.\n");
-            printf("Ser misterioso: Então é você %c corajoso %c %s que busca derrotar o grande Xãopai?\n", 
+            printf("Ser misterioso: Então é você %c corajos%c %s que busca derrotar o grande Xãopai?\n", 
                    gs->pronoum, gs->pronoum, gs->hero.name);
             printf("Tenha cautela, jovem guerreir%c. O caminho a seguir é perigoso e traiçoeiro.\n\n", 
                    gs->pronoum);
@@ -560,7 +560,7 @@ void dungeonDialog(GameState *gs) {
             
         case 2:
             printf("---|PISO %i|---\n", gs->currentFloor);
-            printf("Você desce as escadarias da masmorra, entrando em uma prisão antiga a muito tempo \n");
+            printf("Você desce as escadarias da masmorra, entrando em uma prisão antiga há muito tempo \n");
             printf("abandonada. Esta prisão costumava abrigar os mais perigosos criminosos, mas a \n");
             printf("influência corrompeu as mentes dos guardas e dos prisioneiros.\n\n");
             break;
@@ -575,13 +575,13 @@ void dungeonDialog(GameState *gs) {
         case 4:
             printf("---|PISO %i|---\n", gs->currentFloor);
             printf("Você desce as escadarias da masmorra, entrando na antiga metrópole do reino dos \n");
-            printf("anões, hoje em ruínas. Contam as histórias que a povoada capital sucumbiu súbitamente \n");
+            printf("anões, hoje em ruínas. Contam as histórias que a povoada capital sucumbiu subitamente \n");
             printf("com a chegada de um enorme mal.\n\n");
             break;
             
         case 5:
             printf("---|PISO %i|---\n", gs->currentFloor);
-            printf("Você desce as escadarias da masmorra, chegando escaldantes corredores dos salões \n");
+            printf("Você desce as escadarias da masmorra, chegando aos escaldantes corredores dos salões \n");
             printf("demoníacos. Você pode sentir uma poderosa aura sombria no ar...\n\n");
             break;
 
@@ -604,7 +604,7 @@ void printsBadEnding(GameState *gs) {
 void printsGoodEnding() {
     printf("Você destrói o amuleto.\n");
     printf("Você ouve um estridente ruído vindo do amuleto enquanto vê toda a energia maligna \nse dissipar no ar.\n");
-    printf("Você finalmente libertou a masmorra e os habitantes da cidade das \nmãos do mau!\n");
+    printf("Você finalmente libertou a masmorra e os habitantes da cidade das \nmãos do mal!\n");
     printf("|FINAL BOM|\n");
 }
 
