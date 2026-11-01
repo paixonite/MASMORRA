@@ -918,6 +918,7 @@ int main() {
     int iterationCounter = 0;
     int gamesWon = 0;
     int highscores[HIGHSCORES_NUM] = {0};
+    char heroName[STR_LENGTH] = "";
     
     int action;
     do {
@@ -936,8 +937,9 @@ int main() {
         
         if (iterationCounter == 0) {
             printf("Lojista: Você deve ser nov%c por aqui. Qual seu nome, viajante?\n", gs.pronoum);
-            readString(gs.hero.name, STR_LENGTH);
+            readString(heroName, STR_LENGTH);
         }
+        strcpy(gs.hero.name, heroName);
         
         char lowerName[STR_LENGTH];
         strcpy(lowerName, gs.hero.name);
