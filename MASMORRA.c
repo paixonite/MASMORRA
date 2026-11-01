@@ -38,6 +38,7 @@ typedef struct {
     int maxHp;
     int atk;
     int def;
+    int potions;
     char atkItem[STR_LENGTH];
     char defItem[STR_LENGTH];
 } character_t;
@@ -147,6 +148,7 @@ void initGameData(GameState *gs) {
     gs->hero.maxHp = 10;
     gs->hero.atk = 1;
     gs->hero.def = 0;
+    gs->hero.potions = 0;
     strcpy(gs->hero.atkItem, "Seus punhos");
     strcpy(gs->hero.defItem, "Nada");
 
@@ -335,6 +337,7 @@ void showsInfo(GameState *gs, int monsterCode) {
     printf("| > %s\n", gs->hero.name);
     printf("|   Saúde:  ");
     printHpBar(gs->hero.hp, gs->hero.maxHp);
+    printf("|   Poções: %i\n", gs->hero.potions);
     printf("|   Moedas: %i\n", gs->hero.coins);
     printf("|   Ataque: %i (%s)\n", gs->hero.atk, gs->hero.atkItem);
     printf("|   Defesa: %i (%s)\n", gs->hero.def, gs->hero.defItem);
@@ -408,6 +411,10 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
     
     do {
         printf("[1] Atacar\n");
+        printf("[2] Fugir\n");
+        if (gs->hero.potions > 0) {
+            printf("[3] Usar poção de cura (x%i)\n", gs->hero.potions);
+        }
         int action = readInt();
 
         if (action == 0) {
@@ -443,6 +450,44 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
                     return true;
                 }
             }
+        } else if (action == 2) {
+            // Fugir: você leva um hit e não ganha moedas
+            printf("\n> Você deu meia-volta e tentou fugir!\n");
+            if (gs->hero.def < gs->monsters[monsterCode].atk) {
+                int monsterDamage = gs->monsters[monsterCode].atk - gs->hero.def;
+                gs->hero.hp -= monsterDamage;
+                printf("> %s te atingiu pelas costas causando %i de dano!\n", 
+                       gs->monsters[monsterCode].name, monsterDamage);
+            } else {
+                printf("> %s tentou te atacar pelas costas, mas seu escudo bloqueou o golpe!\n", 
+                       gs->monsters[monsterCode].name);
+            }
+            
+            if (gs->hero.hp <= 0) {
+                clearScreen();
+                printf("VOCÊ MORREU PARA %s TENTANDO FUGIR NO PISO %i\n\a", 
+                       gs->monsters[monsterCode].name, gs->currentFloor);
+                printf("Pontuação: %i\n", gs->score);
+                return true;
+            }
+
+            printf("> Você conseguiu escapar com vida pelos corredores!\n\n");
+            return false;
+        } else if (action == 3) {
+            if (gs->hero.potions <= 0) {
+                printf("\n> Você não tem poções de cura guardadas!\n\n");
+            } else if (gs->hero.hp >= gs->hero.maxHp) {
+                printf("\n> Sua saúde já está no máximo!\n\n");
+            } else {
+                gs->hero.potions--;
+                int heal = 8;
+                if (gs->hero.hp + heal > gs->hero.maxHp) {
+                    heal = gs->hero.maxHp - gs->hero.hp;
+                }
+                gs->hero.hp += heal;
+                printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", 
+                       heal, gs->hero.potions);
+            }
         } else {
             fprintf(stderr, "Comando não encontrado.\n");
         }
@@ -465,10 +510,12 @@ void shopInteraction(GameState *gs, int shopCode) {
     printf("[1] Sair da loja\n");
     printf("[2] %s - $%i\n", gs->shops[shopCode].item1Name, gs->shops[shopCode].item1Price);
     printf("[3] %s - $%i\n", gs->shops[shopCode].item2Name, gs->shops[shopCode].item2Price);
-    if (gs->currentFloor > 1)
+    if (gs->currentFloor >= 1)
         printf("[4] Poção de cura - $5\n");
     if (gs->currentFloor > 2)
         printf("[5] Pingente de vida - $15\n");
+    if (gs->hero.potions > 0)
+        printf("[6] Beber poção de cura (x%i)\n", gs->hero.potions);
     
     int action;
     do {
@@ -506,14 +553,12 @@ void shopInteraction(GameState *gs, int shopCode) {
                 break;
                 
             case 4: // BUYS POTION
-                if ((gs->hero.coins >= 5) && (gs->hero.hp < gs->hero.maxHp) && (gs->currentFloor > 1)) {
-                    printf("Você comprou poção de cura.\n");
-                    gs->hero.hp += 8;
+                if ((gs->hero.coins >= 5) && (gs->currentFloor >= 1)) {
+                    gs->hero.potions++;
                     gs->hero.coins -= 5;
-                    gs->score += 5;
-                    if (gs->hero.hp > gs->hero.maxHp)
-                        gs->hero.hp = gs->hero.maxHp;
-                } else if (gs->currentFloor > 1)
+                    gs->score += 2;
+                    printf("Você comprou uma poção de cura. (Você tem %i)\n", gs->hero.potions);
+                } else if (gs->currentFloor >= 1)
                     fprintf(stderr, "Impossível realizar a ação.\n");
                 break;
                 
@@ -526,6 +571,20 @@ void shopInteraction(GameState *gs, int shopCode) {
                     gs->score += 15;
                 } else if (gs->currentFloor > 2)
                     fprintf(stderr, "Impossível realizar a ação.\n");
+                break;
+                
+            case 6: // DRINKS POTION IN SHOP
+                if (gs->hero.potions > 0 && gs->hero.hp < gs->hero.maxHp) {
+                    gs->hero.potions--;
+                    int heal = 8;
+                    if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
+                    gs->hero.hp += heal;
+                    printf("Você bebeu uma poção de cura e recuperou %i de vida! Saúde: %i/%i\n", heal, gs->hero.hp, gs->hero.maxHp);
+                } else if (gs->hero.potions > 0 && gs->hero.hp >= gs->hero.maxHp) {
+                    printf("Sua saúde já está no máximo!\n");
+                } else {
+                    fprintf(stderr, "Impossível realizar a ação.\n");
+                }
                 break;
                 
             default:
@@ -718,47 +777,82 @@ bool chest(GameState *gs, bool *chestOpened) {
             chestEnemy.hp = chestEnemy.maxHp;
             chestEnemy.coins = rand() % (5 * gs->currentFloor) + 5;
 
+            bool fled = false;
             printf("O Baú era um mímico!\n");
-            printf("[1] Atacar\n");
 
             do {
-                do {
-                    action = readInt();
-                    switch(action) {
-                        case 0:
-                            showsInfo(gs, -1);
-                            break;
-                        case 1:
-                            chestEnemy.hp -= gs->hero.atk;
-                            printf("\n> Você atacou o %s causando %i de dano!\n", chestEnemy.name, gs->hero.atk);
-                            break;
-                        default:
-                            fprintf(stderr, "Comando não encontrado.\n");
-                            break;
-                    }
-                } while(action != 1);
-                
-                if (chestEnemy.hp > 0) {
-                    if (gs->hero.def < chestEnemy.atk) {
-                        int mimicDamage = chestEnemy.atk - gs->hero.def;
-                        gs->hero.hp -= mimicDamage;
-                        printf("> %s te mordeu causando %i de dano!\n\n", chestEnemy.name, mimicDamage);
-                    } else {
-                        printf("> %s tentou te morder, mas sua defesa bloqueou!\n\n", chestEnemy.name);
-                    }
-                    if (gs->hero.hp <= 0) {
-                        clearScreen();
-                        printf("VOCÊ MORREU PARA %s NO PISO %i\n\a", chestEnemy.name, gs->currentFloor);
-                        printf("Pontuação: %i\n", gs->score);
-                        return true;
-                    }
+                printf("[1] Atacar\n");
+                printf("[2] Fugir\n");
+                if (gs->hero.potions > 0)
+                    printf("[3] Usar poção de cura (x%i)\n", gs->hero.potions);
+                action = readInt();
+                switch(action) {
+                    case 0:
+                        showsInfo(gs, -1);
+                        break;
+                    case 1:
+                        chestEnemy.hp -= gs->hero.atk;
+                        printf("\n> Você atacou o %s causando %i de dano!\n", chestEnemy.name, gs->hero.atk);
+                        if (chestEnemy.hp > 0) {
+                            if (gs->hero.def < chestEnemy.atk) {
+                                int mimicDamage = chestEnemy.atk - gs->hero.def;
+                                gs->hero.hp -= mimicDamage;
+                                printf("> %s te mordeu causando %i de dano!\n\n", chestEnemy.name, mimicDamage);
+                            } else {
+                                printf("> %s tentou te morder, mas sua defesa bloqueou!\n\n", chestEnemy.name);
+                            }
+                            if (gs->hero.hp <= 0) {
+                                clearScreen();
+                                printf("VOCÊ MORREU PARA %s NO PISO %i\n\a", chestEnemy.name, gs->currentFloor);
+                                printf("Pontuação: %i\n", gs->score);
+                                return true;
+                            }
+                        }
+                        break;
+                    case 2:
+                        printf("\n> Você deu meia-volta e tentou fugir do mímico!\n");
+                        if (gs->hero.def < chestEnemy.atk) {
+                            int mimicDamage = chestEnemy.atk - gs->hero.def;
+                            gs->hero.hp -= mimicDamage;
+                            printf("> %s te mordeu pelas costas causando %i de dano!\n", chestEnemy.name, mimicDamage);
+                        } else {
+                            printf("> %s tentou te morder pelas costas, mas você conseguiu se esquivar!\n", chestEnemy.name);
+                        }
+                        if (gs->hero.hp <= 0) {
+                            clearScreen();
+                            printf("VOCÊ MORREU PARA %s TENTANDO FUGIR NO PISO %i\n\a", chestEnemy.name, gs->currentFloor);
+                            printf("Pontuação: %i\n", gs->score);
+                            return true;
+                        }
+                        printf("> Você conseguiu escapar do mímico!\n\n");
+                        fled = true;
+                        chestEnemy.hp = 0;
+                        break;
+                    case 3:
+                        if (gs->hero.potions <= 0) {
+                            printf("\n> Você não tem poções de cura guardadas!\n\n");
+                        } else if (gs->hero.hp >= gs->hero.maxHp) {
+                            printf("\n> Sua saúde já está no máximo!\n\n");
+                        } else {
+                            gs->hero.potions--;
+                            int heal = 8;
+                            if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
+                            gs->hero.hp += heal;
+                            printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", heal, gs->hero.potions);
+                        }
+                        break;
+                    default:
+                        fprintf(stderr, "Comando não encontrado.\n");
+                        break;
                 }
             } while(chestEnemy.hp > 0);
             
-            gs->score += chestEnemy.coins;
-            gs->hero.coins += chestEnemy.coins;
-            printf("> Você derrotou o %s!\n", chestEnemy.name);
-            printf("> Você encontrou %d moedas!\n\n", chestEnemy.coins);
+            if (!fled) {
+                gs->score += chestEnemy.coins;
+                gs->hero.coins += chestEnemy.coins;
+                printf("> Você derrotou o %s!\n", chestEnemy.name);
+                printf("> Você encontrou %d moedas!\n\n", chestEnemy.coins);
+            }
 
         } else if (!run) {
             chestEnemy.maxHp = 10 * gs->currentFloor;
@@ -804,10 +898,13 @@ bool chest(GameState *gs, bool *chestOpened) {
 
 bool xaopaiInteraction(GameState *gs) {
     printf("Você desafia o terrível Xãopai!\n");
-    printf("[1] Atacar\n");
     gs->monsters[XAOPAI].hp = gs->monsters[XAOPAI].maxHp;
     
     do {
+        printf("[1] Atacar\n");
+        printf("[2] Fugir\n");
+        if (gs->hero.potions > 0)
+            printf("[3] Usar poção de cura (x%i)\n", gs->hero.potions);
         int action = readInt();
         switch(action) {
             case 0: // INFO
@@ -818,23 +915,48 @@ bool xaopaiInteraction(GameState *gs) {
                 gs->monsters[XAOPAI].hp -= gs->hero.atk;
                 printf("\n> Você atacou XÃOPAI com %s causando %i de dano!\n", 
                        gs->hero.atkItem, gs->hero.atk);
+                if (gs->monsters[XAOPAI].hp > 0) {
+                    gs->hero.hp -= gs->monsters[XAOPAI].atk;
+                    printf("> XÃOPAI revidou com poder sombrio causando %i de dano!\n\n", 
+                           gs->monsters[XAOPAI].atk);
+                    if (gs->hero.hp <= 0) {
+                        clearScreen();
+                        printf("VOCÊ PERECEU DIANTE DE XÃOPAI.\n\a");
+                        printf("Pontuação: %i\n", gs->score);
+                        return true;
+                    }
+                }
+                break;
+
+            case 2: // FLEE
+                printf("\n> Não há como fugir do poder avassalador de XÃOPAI!\n");
+                gs->hero.hp -= gs->monsters[XAOPAI].atk;
+                printf("> XÃOPAI te pune pela covardia causando %i de dano!\n\n", gs->monsters[XAOPAI].atk);
+                if (gs->hero.hp <= 0) {
+                    clearScreen();
+                    printf("VOCÊ PERECEU TENTANDO FUGIR DE XÃOPAI.\n\a");
+                    printf("Pontuação: %i\n", gs->score);
+                    return true;
+                }
+                break;
+
+            case 3: // POTION
+                if (gs->hero.potions <= 0) {
+                    printf("\n> Você não tem poções de cura guardadas!\n\n");
+                } else if (gs->hero.hp >= gs->hero.maxHp) {
+                    printf("\n> Sua saúde já está no máximo!\n\n");
+                } else {
+                    gs->hero.potions--;
+                    int heal = 8;
+                    if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
+                    gs->hero.hp += heal;
+                    printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", heal, gs->hero.potions);
+                }
                 break;
 
             default:
                 fprintf(stderr, "Comando não encontrado.\n");
                 break;
-        }
-        
-        if (action == 1 && gs->monsters[XAOPAI].hp > 0) {
-            gs->hero.hp -= gs->monsters[XAOPAI].atk;
-            printf("> XÃOPAI revidou com poder sombrio causando %i de dano!\n\n", 
-                   gs->monsters[XAOPAI].atk);
-            if (gs->hero.hp <= 0) {
-                clearScreen();
-                printf("VOCÊ PERECEU DIANTE DE XÃOPAI.\n\a");
-                printf("Pontuação: %i\n", gs->score);
-                return true;
-            }
         }
     } while(gs->monsters[XAOPAI].hp > 0);
 
