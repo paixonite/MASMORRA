@@ -44,7 +44,7 @@ typedef struct {
 } character_t;
 
 typedef struct {
-    char name[STR_LENGTH];
+    char name[80];
     int hp;
     int maxHp;
     int atk;
@@ -416,9 +416,53 @@ void printsAmulet() {
 
 // ================= [ COMBAT SYSTEM ] ======================================== //
 
+// Calcula atributo com taxa de variação de ±15% (85% a 115%)
+int rollStat(int baseStat) {
+    if (baseStat <= 0) return 0;
+    int percent = 85 + (rand() % 31);
+    int rolled = (baseStat * percent + 50) / 100;
+    return (rolled < 1) ? 1 : rolled;
+}
+
 bool monsterInteraction(GameState *gs, int monsterCode) {
-    printf("> Você encontrou %s!\n", gs->monsters[monsterCode].name);
+    bool isElite = false;
+    // 20% de chance de gerar um monstro Elite
+    if (rand() % 5 == 0) {
+        isElite = true;
+        char originalName[40];
+        strncpy(originalName, gs->monsters[monsterCode].name, sizeof(originalName) - 1);
+        originalName[sizeof(originalName) - 1] = '\0';
+
+        int eliteType = rand() % 3;
+        switch (eliteType) {
+            case 0: // Feroz (+40% ATK)
+                snprintf(gs->monsters[monsterCode].name, sizeof(gs->monsters[monsterCode].name), "★ %s Feroz ★", originalName);
+                gs->monsters[monsterCode].atk = (gs->monsters[monsterCode].atk * 14 + 5) / 10;
+                break;
+            case 1: // Couraçado (+50% DEF, +20% HP)
+                snprintf(gs->monsters[monsterCode].name, sizeof(gs->monsters[monsterCode].name), "★ %s Couraçado ★", originalName);
+                gs->monsters[monsterCode].def = (gs->monsters[monsterCode].def * 15 + 5) / 10;
+                if (gs->monsters[monsterCode].def == 0) {
+                    gs->monsters[monsterCode].def = 5;
+                }
+                gs->monsters[monsterCode].maxHp = (gs->monsters[monsterCode].maxHp * 12 + 5) / 10;
+                break;
+            case 2: // Colossal (+80% HP, +10% ATK)
+                snprintf(gs->monsters[monsterCode].name, sizeof(gs->monsters[monsterCode].name), "★ %s Colossal ★", originalName);
+                gs->monsters[monsterCode].maxHp = (gs->monsters[monsterCode].maxHp * 18 + 5) / 10;
+                gs->monsters[monsterCode].atk = (gs->monsters[monsterCode].atk * 11 + 5) / 10;
+                break;
+        }
+    }
+
     gs->monsters[monsterCode].hp = gs->monsters[monsterCode].maxHp;
+
+    if (isElite) {
+        printf("> Você encontrou um monstro ELITE: %s!\n", gs->monsters[monsterCode].name);
+        printf("> Uma poderosa aura intimidadora emana da criatura...\n\n");
+    } else {
+        printf("> Você encontrou %s!\n", gs->monsters[monsterCode].name);
+    }
     
     do {
         printf("[1] Atacar\n");
@@ -431,27 +475,50 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
         if (action == 0) {
             showsInfo(gs, &gs->monsters[monsterCode]);
         } else if (action == 1) {
-            // Lógica de dano
-            if (gs->monsters[monsterCode].def >= gs->hero.atk) {
+            // Lógica de dano do herói
+            int heroMaxAtk = (gs->hero.atk * 115 + 50) / 100;
+            int monsterMinDef = (gs->monsters[monsterCode].def * 85 + 50) / 100;
+            if (gs->monsters[monsterCode].def > 0 && heroMaxAtk <= monsterMinDef) {
                 clearScreen();
                 printf("VOCÊ MORREU DE PARADA CARDÍACA AO VER %s NO PISO %i\n\a", 
                         gs->monsters[monsterCode].name, gs->currentFloor);
                 printf("Pontuação: %i\n", gs->score);
                 return true;
+            }
+
+            int rolledHeroAtk = rollStat(gs->hero.atk);
+            int rolledMonsterDef = rollStat(gs->monsters[monsterCode].def);
+            int heroDamage = rolledHeroAtk - rolledMonsterDef;
+
+            if (heroDamage <= 0) {
+                printf("\n> Você atacou com %s, mas %s bloqueou o golpe!\n", 
+                       gs->hero.atkItem, gs->monsters[monsterCode].name);
             } else {
-                int heroDamage = gs->hero.atk - gs->monsters[monsterCode].def;
+                bool isCrit = (rand() % 10 == 0);
+                if (isCrit) {
+                    heroDamage = (heroDamage * 3 + 1) / 2;
+                    printf("\n> GOLPE CRÍTICO! Você atacou com %s causando %i de dano!\n", 
+                           gs->hero.atkItem, heroDamage);
+                } else {
+                    printf("\n> Você atacou com %s causando %i de dano!\n", 
+                           gs->hero.atkItem, heroDamage);
+                }
                 gs->monsters[monsterCode].hp -= heroDamage;
-                printf("\n> Você atacou com %s causando %i de dano!\n", gs->hero.atkItem, heroDamage);
             }
 
             // Revide do monstro
             if (gs->monsters[monsterCode].hp > 0) {
-                if (gs->hero.def < gs->monsters[monsterCode].atk) {
-                    int monsterDamage = gs->monsters[monsterCode].atk - gs->hero.def;
-                    gs->hero.hp -= monsterDamage;
-                    printf("> %s te atacou causando %i de dano!\n\n", gs->monsters[monsterCode].name, monsterDamage);
+                int rolledMonsterAtk = rollStat(gs->monsters[monsterCode].atk);
+                int rolledHeroDef = rollStat(gs->hero.def);
+                int monsterDamage = rolledMonsterAtk - rolledHeroDef;
+
+                if (monsterDamage <= 0) {
+                    printf("> %s te atacou, mas seu escudo bloqueou o golpe!\n\n", 
+                           gs->monsters[monsterCode].name);
                 } else {
-                    printf("> %s te atacou, mas seu escudo bloqueou o golpe!\n\n", gs->monsters[monsterCode].name);
+                    gs->hero.hp -= monsterDamage;
+                    printf("> %s te atacou causando %i de dano!\n\n", 
+                           gs->monsters[monsterCode].name, monsterDamage);
                 }
                 
                 if (gs->hero.hp <= 0) {
@@ -464,14 +531,17 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
         } else if (action == 2) {
             // Fugir: você leva um hit e não ganha moedas
             printf("\n> Você deu meia-volta e tentou fugir!\n");
-            if (gs->hero.def < gs->monsters[monsterCode].atk) {
-                int monsterDamage = gs->monsters[monsterCode].atk - gs->hero.def;
+            int rolledMonsterAtk = rollStat(gs->monsters[monsterCode].atk);
+            int rolledHeroDef = rollStat(gs->hero.def);
+            int monsterDamage = rolledMonsterAtk - rolledHeroDef;
+
+            if (monsterDamage <= 0) {
+                printf("> %s tentou te atacar pelas costas, mas seu escudo bloqueou o golpe!\n", 
+                       gs->monsters[monsterCode].name);
+            } else {
                 gs->hero.hp -= monsterDamage;
                 printf("> %s te atingiu pelas costas causando %i de dano!\n", 
                        gs->monsters[monsterCode].name, monsterDamage);
-            } else {
-                printf("> %s tentou te atacar pelas costas, mas seu escudo bloqueou o golpe!\n", 
-                       gs->monsters[monsterCode].name);
             }
             
             if (gs->hero.hp <= 0) {
@@ -504,9 +574,24 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
         }
     } while (gs->monsters[monsterCode].hp > 0);
 
-    gs->score += 100;
-    gs->hero.coins += gs->monsters[monsterCode].coins;
-    printf("> Você derrotou %s!\n> Você encontrou %i moedas!\n\n", gs->monsters[monsterCode].name, gs->monsters[monsterCode].coins);
+    if (isElite) {
+        int eliteCoins = (gs->monsters[monsterCode].coins * 15 + 5) / 10;
+        gs->score += 250;
+        gs->hero.coins += eliteCoins;
+        printf("> Você derrotou %s!\n> Você encontrou %i moedas!\n", 
+               gs->monsters[monsterCode].name, eliteCoins);
+        if (rand() % 10 < 4) {
+            gs->hero.potions++;
+            printf("> O monstro elite derrubou uma poção de cura! (Você tem %i)\n\n", gs->hero.potions);
+        } else {
+            printf("\n");
+        }
+    } else {
+        gs->score += 100;
+        gs->hero.coins += gs->monsters[monsterCode].coins;
+        printf("> Você derrotou %s!\n> Você encontrou %i moedas!\n\n", 
+               gs->monsters[monsterCode].name, gs->monsters[monsterCode].coins);
+    }
     
     return false;
 }
@@ -851,16 +936,34 @@ bool chest(GameState *gs, bool *chestOpened) {
                     case 0:
                         showsInfo(gs, &chestEnemy);
                         break;
-                    case 1:
-                        chestEnemy.hp -= gs->hero.atk;
-                        printf("\n> Você atacou o %s causando %i de dano!\n", chestEnemy.name, gs->hero.atk);
+                    case 1: {
+                        int rolledHeroAtk = rollStat(gs->hero.atk);
+                        int rolledMimicDef = rollStat(chestEnemy.def);
+                        int heroDamage = rolledHeroAtk - rolledMimicDef;
+
+                        if (heroDamage <= 0) {
+                            printf("\n> Você atacou o %s, mas ele repeliu seu golpe!\n", chestEnemy.name);
+                        } else {
+                            bool isCrit = (rand() % 10 == 0);
+                            if (isCrit) {
+                                heroDamage = (heroDamage * 3 + 1) / 2;
+                                printf("\n> GOLPE CRÍTICO! Você atacou o %s causando %i de dano!\n", chestEnemy.name, heroDamage);
+                            } else {
+                                printf("\n> Você atacou o %s causando %i de dano!\n", chestEnemy.name, heroDamage);
+                            }
+                            chestEnemy.hp -= heroDamage;
+                        }
+
                         if (chestEnemy.hp > 0) {
-                            if (gs->hero.def < chestEnemy.atk) {
-                                int mimicDamage = chestEnemy.atk - gs->hero.def;
+                            int rolledMimicAtk = rollStat(chestEnemy.atk);
+                            int rolledHeroDef = rollStat(gs->hero.def);
+                            int mimicDamage = rolledMimicAtk - rolledHeroDef;
+
+                            if (mimicDamage <= 0) {
+                                printf("> %s tentou te morder, mas sua defesa bloqueou!\n\n", chestEnemy.name);
+                            } else {
                                 gs->hero.hp -= mimicDamage;
                                 printf("> %s te mordeu causando %i de dano!\n\n", chestEnemy.name, mimicDamage);
-                            } else {
-                                printf("> %s tentou te morder, mas sua defesa bloqueou!\n\n", chestEnemy.name);
                             }
                             if (gs->hero.hp <= 0) {
                                 clearScreen();
@@ -870,14 +973,18 @@ bool chest(GameState *gs, bool *chestOpened) {
                             }
                         }
                         break;
-                    case 2:
+                    }
+                    case 2: {
                         printf("\n> Você deu meia-volta e tentou fugir do mímico!\n");
-                        if (gs->hero.def < chestEnemy.atk) {
-                            int mimicDamage = chestEnemy.atk - gs->hero.def;
+                        int rolledMimicAtk = rollStat(chestEnemy.atk);
+                        int rolledHeroDef = rollStat(gs->hero.def);
+                        int mimicDamage = rolledMimicAtk - rolledHeroDef;
+
+                        if (mimicDamage <= 0) {
+                            printf("> %s tentou te morder pelas costas, mas você conseguiu se esquivar!\n", chestEnemy.name);
+                        } else {
                             gs->hero.hp -= mimicDamage;
                             printf("> %s te mordeu pelas costas causando %i de dano!\n", chestEnemy.name, mimicDamage);
-                        } else {
-                            printf("> %s tentou te morder pelas costas, mas você conseguiu se esquivar!\n", chestEnemy.name);
                         }
                         if (gs->hero.hp <= 0) {
                             clearScreen();
@@ -889,6 +996,7 @@ bool chest(GameState *gs, bool *chestOpened) {
                         fled = true;
                         chestEnemy.hp = 0;
                         break;
+                    }
                     case 3:
                         if (gs->hero.potions <= 0) {
                             printf("\n> Você não tem poções de cura guardadas!\n\n");
@@ -933,9 +1041,15 @@ bool chest(GameState *gs, bool *chestOpened) {
                             showsInfo(gs, &chestEnemy);
                             break;
                         case 1: {
-                            int kickDamage = gs->hero.atk + 10;
+                            int kickDamage = rollStat(gs->hero.atk + 10);
+                            bool isCrit = (rand() % 10 == 0);
+                            if (isCrit) {
+                                kickDamage = (kickDamage * 3 + 1) / 2;
+                                printf("\n> GOLPE CRÍTICO! Você chutou violentamente o baú causando %i de dano!\n\n", kickDamage);
+                            } else {
+                                printf("\n> Você chutou violentamente o baú causando %i de dano!\n\n", kickDamage);
+                            }
                             chestEnemy.hp -= kickDamage;
-                            printf("\n> Você chutou violentamente o baú causando %i de dano!\n\n", kickDamage);
                             break;
                         }
                         default:
@@ -975,14 +1089,23 @@ bool xaopaiInteraction(GameState *gs) {
                 showsInfo(gs, &gs->monsters[XAOPAI]);
                 break;
 
-            case 1: // ATTACK
-                gs->monsters[XAOPAI].hp -= gs->hero.atk;
-                printf("\n> Você atacou XÃOPAI com %s causando %i de dano!\n", 
-                       gs->hero.atkItem, gs->hero.atk);
+            case 1: { // ATTACK
+                int heroDamage = rollStat(gs->hero.atk);
+                bool isCrit = (rand() % 10 == 0);
+                if (isCrit) {
+                    heroDamage = (heroDamage * 3 + 1) / 2;
+                    printf("\n> GOLPE CRÍTICO! Você atacou XÃOPAI com %s causando %i de dano!\n", 
+                           gs->hero.atkItem, heroDamage);
+                } else {
+                    printf("\n> Você atacou XÃOPAI com %s causando %i de dano!\n", 
+                           gs->hero.atkItem, heroDamage);
+                }
+                gs->monsters[XAOPAI].hp -= heroDamage;
                 if (gs->monsters[XAOPAI].hp > 0) {
-                    gs->hero.hp -= gs->monsters[XAOPAI].atk;
+                    int xaopaiDamage = rollStat(gs->monsters[XAOPAI].atk);
+                    gs->hero.hp -= xaopaiDamage;
                     printf("> XÃOPAI revidou com poder sombrio causando %i de dano!\n\n", 
-                           gs->monsters[XAOPAI].atk);
+                           xaopaiDamage);
                     if (gs->hero.hp <= 0) {
                         clearScreen();
                         printf("VOCÊ PERECEU DIANTE DE XÃOPAI.\n\a");
@@ -991,11 +1114,13 @@ bool xaopaiInteraction(GameState *gs) {
                     }
                 }
                 break;
+            }
 
-            case 2: // FLEE
+            case 2: { // FLEE
                 printf("\n> Não há como fugir do poder avassalador de XÃOPAI!\n");
-                gs->hero.hp -= gs->monsters[XAOPAI].atk;
-                printf("> XÃOPAI te pune pela covardia causando %i de dano!\n\n", gs->monsters[XAOPAI].atk);
+                int xaopaiDamage = rollStat(gs->monsters[XAOPAI].atk);
+                gs->hero.hp -= xaopaiDamage;
+                printf("> XÃOPAI te pune pela covardia causando %i de dano!\n\n", xaopaiDamage);
                 if (gs->hero.hp <= 0) {
                     clearScreen();
                     printf("VOCÊ PERECEU TENTANDO FUGIR DE XÃOPAI.\n\a");
@@ -1003,6 +1128,7 @@ bool xaopaiInteraction(GameState *gs) {
                     return true;
                 }
                 break;
+            }
 
             case 3: // POTION
                 if (gs->hero.potions <= 0) {
