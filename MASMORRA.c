@@ -77,6 +77,7 @@ typedef struct {
     int secretNumber;
     char pronoum;
     bool eliteSpawnedThisFloor;
+    bool fledXaopai;
 } GameState;
 
 // ================= [ ENGINE & INPUTS ] ====================================== //
@@ -154,6 +155,7 @@ void initGameData(GameState *gs) {
     // Pronoun
     gs->pronoum = 'o';
     gs->eliteSpawnedThisFloor = false;
+    gs->fledXaopai = false;
 
     // Inicializa o Herói
     gs->hero.coins = 150;
@@ -564,7 +566,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
                 printf("\n> Sua saúde já está no máximo!\n\n");
             } else {
                 gs->hero.potions--;
-                int heal = 80;
+                int heal = gs->hero.maxHp / 2;
                 if (gs->hero.hp + heal > gs->hero.maxHp) {
                     heal = gs->hero.maxHp - gs->hero.hp;
                 }
@@ -713,7 +715,7 @@ void shopInteraction(GameState *gs, int shopCode) {
             case 6: // DRINKS POTION IN SHOP
                 if (gs->hero.potions > 0 && gs->hero.hp < gs->hero.maxHp) {
                     gs->hero.potions--;
-                    int heal = 80;
+                    int heal = gs->hero.maxHp / 2;
                     if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                     gs->hero.hp += heal;
                     printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! Saúde: %i/%i\n\n", heal, gs->hero.hp, gs->hero.maxHp);
@@ -871,6 +873,16 @@ void printsTrueEnding(GameState *gs) {
     printf("|FINAL VERDADEIRO|\n");
 }
 
+void printsCowardEnding(GameState *gs) {
+    printf("\n> Por um milagre do destino, você encontra uma brecha e consegue escapar de XÃOPAI!\n");
+    printf("Você corre desesperadamente escadaria acima sem olhar para trás, abandonando a masmorra.\n");
+    printf("A cidade acima eventualmente sucumbe à escuridão, mas pelo menos você salvou a própria pele...\n");
+    printf("Você sobreviveu, mas será para sempre lembrad%c como %c maior covarde da história, %s.\n", 
+           gs->pronoum, gs->pronoum, gs->hero.name);
+    printf("|FINAL COVARDE|\n");
+    printf("Pontuação: %i\n\n", gs->score);
+}
+
 // ================= [ COMBAT & EVENT FUNCTIONS ] ============================== //
 
 bool chest(GameState *gs, bool *chestOpened) {
@@ -1010,7 +1022,7 @@ bool chest(GameState *gs, bool *chestOpened) {
                             printf("\n> Sua saúde já está no máximo!\n\n");
                         } else {
                             gs->hero.potions--;
-                            int heal = 80;
+                            int heal = gs->hero.maxHp / 2;
                             if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                             gs->hero.hp += heal;
                             printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", heal, gs->hero.potions);
@@ -1123,6 +1135,10 @@ bool xaopaiInteraction(GameState *gs) {
             }
 
             case 2: { // FLEE
+                if (rand() % 10 == 0) {
+                    gs->fledXaopai = true;
+                    return false;
+                }
                 printf("\n> Não há como fugir do poder avassalador de XÃOPAI!\n");
                 int xaopaiDamage = rollStat(gs->monsters[XAOPAI].atk);
                 gs->hero.hp -= xaopaiDamage;
@@ -1143,7 +1159,7 @@ bool xaopaiInteraction(GameState *gs) {
                     printf("\n> Sua saúde já está no máximo!\n\n");
                 } else {
                     gs->hero.potions--;
-                    int heal = 80;
+                    int heal = gs->hero.maxHp / 2;
                     if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                     gs->hero.hp += heal;
                     printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", heal, gs->hero.potions);
@@ -1374,6 +1390,8 @@ int main() {
         
         if (gs.isDead)
             goto TheEnd;
+        else if (gs.fledXaopai)
+            printsCowardEnding(&gs);
         else
             ending(&gs);
         
