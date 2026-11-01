@@ -60,6 +60,11 @@ typedef struct {
     char item2Name[STR_LENGTH];
 } shop_t;
 
+typedef struct {
+    char name[STR_LENGTH];
+    int score;
+} highscore_entry_t;
+
 // O Contexto Global encapsulado
 typedef struct {
     character_t hero;
@@ -506,10 +511,10 @@ void shopInteraction(GameState *gs, int shopCode) {
 
 // ================= [ UTILITY FUNCTIONS ] ==================================== //
 
-int compareInt(const void* a, const void* b) {
-    const int* num1 = (const int*)a;
-    const int* num2 = (const int*)b;
-    return *num2 - *num1;
+int compareHighscores(const void* a, const void* b) {
+    const highscore_entry_t* h1 = (const highscore_entry_t*)a;
+    const highscore_entry_t* h2 = (const highscore_entry_t*)b;
+    return h2->score - h1->score;
 }
 
 // ================= [ DIALOG ] =============================== //
@@ -847,22 +852,29 @@ void ending(GameState *gs) {
     printf("Pontuação: %i\n\n", gs->score);
 }
 
-void updatesHighscores(GameState *gs, int* highscores) {
+void updatesHighscores(GameState *gs, highscore_entry_t* highscores) {
     FILE *file = fopen("Highscores.bin", "rb");
 
     if (file != NULL) {
-        size_t readCount = fread(highscores, sizeof(int), HIGHSCORES_NUM, file);
+        size_t readCount = fread(highscores, sizeof(highscore_entry_t), HIGHSCORES_NUM, file);
         for (size_t i = readCount; i < HIGHSCORES_NUM; ++i) {
-            highscores[i] = 0;
+            highscores[i].score = 0;
+            highscores[i].name[0] = '\0';
         }
         fclose(file);
     } else {
-        memset(highscores, 0, sizeof(int) * HIGHSCORES_NUM);
+        memset(highscores, 0, sizeof(highscore_entry_t) * HIGHSCORES_NUM);
     }
 
-    highscores[HIGHSCORES_NUM - 1] = gs->score;
+    highscores[HIGHSCORES_NUM - 1].score = gs->score;
+    if (strlen(gs->hero.name) > 0) {
+        strncpy(highscores[HIGHSCORES_NUM - 1].name, gs->hero.name, STR_LENGTH - 1);
+        highscores[HIGHSCORES_NUM - 1].name[STR_LENGTH - 1] = '\0';
+    } else {
+        strcpy(highscores[HIGHSCORES_NUM - 1].name, "Aventureiro");
+    }
 
-    qsort(highscores, HIGHSCORES_NUM, sizeof(int), compareInt);
+    qsort(highscores, HIGHSCORES_NUM, sizeof(highscore_entry_t), compareHighscores);
 
     file = fopen("Highscores.bin", "wb");
     if (file == NULL) {
@@ -870,18 +882,18 @@ void updatesHighscores(GameState *gs, int* highscores) {
         return;
     }
 
-    fwrite(highscores, sizeof(int), HIGHSCORES_NUM, file);
+    fwrite(highscores, sizeof(highscore_entry_t), HIGHSCORES_NUM, file);
     fclose(file);
 }
 
-int highscoresMenu(GameState *gs, int* highscores) {
+int highscoresMenu(GameState *gs, highscore_entry_t* highscores) {
     int input;
     clearScreen();
-    printf("          - HIGH SCORES -          \n");
+    printf("                - HIGH SCORES -                \n\n");
 
     for (int i = 0; i < HIGHSCORES_NUM - 1; ++i)
-        if (highscores[i] != 0)
-            printf("              %2i - %i\n", i + 1, highscores[i]);
+        if (highscores[i].score != 0)
+            printf("            %2i - %-18s %5i\n", i + 1, highscores[i].name, highscores[i].score);
 
     printf("\n         (1) Jogar novamente\n");
     printf("         (2) Sair do jogo\n");
@@ -938,9 +950,15 @@ int main() {
 
     int iterationCounter = 0;
     int gamesWon = 0;
-    int highscores[HIGHSCORES_NUM] = {0};
+    highscore_entry_t highscores[HIGHSCORES_NUM] = {0};
     char heroName[STR_LENGTH] = "";
     char savedPronoun = 'o';
+
+    FILE *initFile = fopen("Highscores.bin", "rb");
+    if (initFile != NULL) {
+        fread(highscores, sizeof(highscore_entry_t), HIGHSCORES_NUM, initFile);
+        fclose(initFile);
+    }
     
     int action;
     do {
