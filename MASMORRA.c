@@ -79,18 +79,43 @@ typedef struct {
 
 // ================= [ ENGINE & INPUTS ] ====================================== //
 
-// Função blindada contra inputs inválidos
+static char inputLine[256];
+static char *inputPtr = NULL;
+
+// Função blindada contra inputs inválidos com suporte a múltiplos inteiros na mesma linha
 int readInt() {
-    char buffer[64];
     int value;
     while (true) {
-        if (fgets(buffer, sizeof(buffer), stdin) != NULL) {
-            // Tenta converter para inteiro
-            if (sscanf(buffer, "%d", &value) == 1) {
-                return value;
+        // Se o buffer estiver vazio ou no final da linha, lê uma nova linha
+        while (inputPtr == NULL || *inputPtr == '\0') {
+            if (fgets(inputLine, sizeof(inputLine), stdin) == NULL) {
+                if (feof(stdin)) exit(0);
+                fprintf(stderr, "Entrada inválida.\n");
+                continue;
             }
-        } else if (feof(stdin)) {
-            exit(0);
+            inputPtr = inputLine;
+        }
+
+        // Pula espaços e quebras de linha em branco
+        while (*inputPtr && isspace((unsigned char)*inputPtr)) {
+            inputPtr++;
+        }
+
+        // Se a linha só tinha espaços/nova linha, busca a próxima
+        if (*inputPtr == '\0') {
+            continue;
+        }
+
+        // Tenta ler um inteiro a partir da posição atual
+        int charsRead = 0;
+        if (sscanf(inputPtr, "%d%n", &value, &charsRead) == 1) {
+            inputPtr += charsRead;
+            return value;
+        }
+
+        // Token não é um inteiro: avança até o próximo espaço para não travar
+        while (*inputPtr && !isspace((unsigned char)*inputPtr)) {
+            inputPtr++;
         }
         fprintf(stderr, "Entrada inválida.\n");
     }
@@ -98,6 +123,7 @@ int readInt() {
 
 // Leitura segura de strings com suporte a espaços
 void readString(char* buffer, int maxLength) {
+    inputPtr = NULL; // Descarta tokens pendentes ao ler string
     while (true) {
         if (fgets(buffer, maxLength, stdin) != NULL) {
             buffer[strcspn(buffer, "\n")] = 0; // Remove o \n do final
