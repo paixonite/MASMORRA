@@ -892,9 +892,17 @@ int highscoresMenu(GameState *gs, int* highscores) {
             case 1:
                 return 1;
                 break;
-            case 2:
-                return 0;
+            case 2: {
+                printf("> Deseja realmente sair? (s/n): ");
+                char confirm[STR_LENGTH];
+                readString(confirm, STR_LENGTH);
+                if (tolower((unsigned char)confirm[0]) == 's' || tolower((unsigned char)confirm[0]) == 'y') {
+                    return 0;
+                }
+                printf("\n         (1) Jogar novamente\n");
+                printf("         (2) Sair do jogo\n");
                 break;
+            }
             case 10:
                 gs->pronoum = 'e';
                 printf("?\n");
@@ -911,7 +919,7 @@ int highscoresMenu(GameState *gs, int* highscores) {
                 fprintf(stderr, "Comando não encontrado.\n");
                 break;
         }
-    } while(input != 1 && input != 2);
+    } while(input != 1);
     
     return 0;
 }
@@ -1033,8 +1041,16 @@ int main() {
                     savedPronoun = gs.pronoum;
                     break;
                     
-                case 3:
+                case 3: {
+                    printf("> Deseja realmente sair? (s/n): ");
+                    char confirm[STR_LENGTH];
+                    readString(confirm, STR_LENGTH);
+                    if (tolower((unsigned char)confirm[0]) != 's' && tolower((unsigned char)confirm[0]) != 'y') {
+                        action = 0;
+                        printf("\n[1] Jogar novamente\n[2] Highscores\n[3] Sair do jogo\n");
+                    }
                     break;
+                }
                     
                 default:
                     fprintf(stderr, "Comando não encontrado.\n");
