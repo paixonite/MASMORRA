@@ -10,19 +10,19 @@
 #include <stdbool.h>
 #include <ctype.h>
 
-// ================= [ MACROS E CROSS-PLATFORM ] ============================== //
+// ================= [ MACROS & CROSS-PLATFORM ] ============================== //
 
 #define PAIXAO 106
 #define STR_LENGTH 30 
 #define HIGHSCORES_NUM 11
 #define XAOPAI 15
 
-// Macros de compatibilidade para limpar a tela
+// Cross-platform screen clear macros
 #ifdef _WIN32
     #include <windows.h>
     #define CLEAR_CMD "cls"
 #else
-    #define CLEAR_CMD "clear" // No Linux/Mac usa clear nativo
+    #define CLEAR_CMD "clear" // Linux/macOS uses native clear
 #endif
 
 void clearScreen() {
@@ -66,7 +66,7 @@ typedef struct {
     int score;
 } highscore_entry_t;
 
-// O Contexto Global encapsulado
+// Encapsulated Global Game State
 typedef struct {
     character_t hero;
     enemy_t monsters[16];
@@ -92,11 +92,11 @@ bool hasPendingInput() {
     return (*p != '\0');
 }
 
-// Função blindada contra inputs inválidos com suporte a múltiplos inteiros na mesma linha
+// Robust input reader with multi-integer buffer support per line
 int readInt() {
     int value;
     while (true) {
-        // Se o buffer estiver vazio ou no final da linha, lê uma nova linha
+        // If buffer is empty or end-of-line reached, read a new line
         while (inputPtr == NULL || *inputPtr == '\0') {
             printf("< ");
             fflush(stdout);
@@ -108,24 +108,24 @@ int readInt() {
             inputPtr = inputLine;
         }
 
-        // Pula espaços e quebras de linha em branco
+        // Skip leading whitespace and blank newlines
         while (*inputPtr && isspace((unsigned char)*inputPtr)) {
             inputPtr++;
         }
 
-        // Se a linha só tinha espaços/nova linha, busca a próxima
+        // If line contains only whitespace, fetch next line
         if (*inputPtr == '\0') {
             continue;
         }
 
-        // Tenta ler um inteiro a partir da posição atual
+        // Try parsing an integer from current position
         int charsRead = 0;
         if (sscanf(inputPtr, "%d%n", &value, &charsRead) == 1) {
             inputPtr += charsRead;
             return value;
         }
 
-        // Token não é um inteiro: avança até o próximo espaço para não travar
+        // Token is not an integer: advance to next whitespace to avoid infinite loops
         while (*inputPtr && !isspace((unsigned char)*inputPtr)) {
             inputPtr++;
         }
@@ -133,14 +133,14 @@ int readInt() {
     }
 }
 
-// Leitura segura de strings com suporte a espaços
+// Safe string reader supporting spaces
 void readString(char* buffer, int maxLength) {
-    inputPtr = NULL; // Descarta tokens pendentes ao ler string
+    inputPtr = NULL; // Discard any pending integer tokens before reading string
     while (true) {
         printf("< ");
         fflush(stdout);
         if (fgets(buffer, maxLength, stdin) != NULL) {
-            buffer[strcspn(buffer, "\n")] = 0; // Remove o \n do final
+            buffer[strcspn(buffer, "\n")] = 0; // Strip trailing newline
             if (strlen(buffer) > 0) return;
         } else if (feof(stdin)) {
             exit(0);
@@ -157,7 +157,7 @@ void initGameData(GameState *gs) {
     gs->eliteSpawnedThisFloor = false;
     gs->fledXaopai = false;
 
-    // Inicializa o Herói
+    // Initialize Hero
     gs->hero.coins = 150;
     gs->hero.hp = 100;
     gs->hero.maxHp = 100;
@@ -261,7 +261,7 @@ void initGameData(GameState *gs) {
     gs->monsters[XAOPAI].atk = 10;
     gs->monsters[XAOPAI].def = 0;
 
-    // Inicializa lojas
+    // Initialize Shops
     strcpy(gs->shops[0].item1Name, "Bastão de madeira");
     gs->shops[0].item1atkPoints = 20;
     gs->shops[0].item1Price = 100;
@@ -308,11 +308,11 @@ void initGameData(GameState *gs) {
 // ================= [ UI & ASCII ART ] ======================================= //
 
 /*
- * AGRADECIMENTOS - ARTE ASCII
- * Algumas das artes renderizadas abaixo foram adaptadas de obras originais de diversos artistas.
- * Os arquivos intactos com as assinaturas encontram-se em /assets.
- * - Xãopai: Adaptação da obra de eVil
- * - Amuleto: Adaptação da obra de [...]
+ * ACKNOWLEDGMENTS - ASCII ART
+ * Some of the ASCII art rendered below was adapted from original works by various artists.
+ * Untouched files with artist signatures can be found in /assets.
+ * - Xãopai: Adaptation of work by eVil
+ * - Amulet: Adaptation of work by [...]
  */
 
 void titleScreen() {
@@ -420,7 +420,7 @@ void printsAmulet() {
 
 // ================= [ COMBAT SYSTEM ] ======================================== //
 
-// Calcula atributo com taxa de variação de ±15% (85% a 115%)
+// Calculates attribute stat with ±15% variance (85% to 115%)
 int rollStat(int baseStat) {
     if (baseStat <= 0) return 0;
     int percent = 85 + (rand() % 31);
@@ -430,7 +430,7 @@ int rollStat(int baseStat) {
 
 bool monsterInteraction(GameState *gs, int monsterCode) {
     bool isElite = false;
-    // Monstros Elite: só aparecem depois do primeiro andar e no máximo 1 por andar
+    // Elite Monsters: only appear after floor 1 and at most 1 per floor
     if (gs->currentFloor > 1 && !gs->eliteSpawnedThisFloor && (rand() % 5 == 0)) {
         isElite = true;
         gs->eliteSpawnedThisFloor = true;
@@ -440,11 +440,11 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
 
         int eliteType = rand() % 3;
         switch (eliteType) {
-            case 0: // Feroz (+40% ATK)
+            case 0: // Fierce (+40% ATK)
                 snprintf(gs->monsters[monsterCode].name, sizeof(gs->monsters[monsterCode].name), "★ %s Feroz ★", originalName);
                 gs->monsters[monsterCode].atk = (gs->monsters[monsterCode].atk * 14 + 5) / 10;
                 break;
-            case 1: // Couraçado (+50% DEF, +20% HP)
+            case 1: // Armored (+50% DEF, +20% HP)
                 snprintf(gs->monsters[monsterCode].name, sizeof(gs->monsters[monsterCode].name), "★ %s Couraçado ★", originalName);
                 gs->monsters[monsterCode].def = (gs->monsters[monsterCode].def * 15 + 5) / 10;
                 if (gs->monsters[monsterCode].def == 0) {
@@ -480,7 +480,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
         if (action == 0) {
             showsInfo(gs, &gs->monsters[monsterCode]);
         } else if (action == 1) {
-            // Lógica de dano do herói
+            // Hero damage logic
             int heroMaxAtk = (gs->hero.atk * 115 + 50) / 100;
             int monsterMinDef = (gs->monsters[monsterCode].def * 85 + 50) / 100;
             if (gs->monsters[monsterCode].def > 0 && heroMaxAtk <= monsterMinDef) {
@@ -511,7 +511,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
                 gs->monsters[monsterCode].hp -= heroDamage;
             }
 
-            // Revide do monstro
+            // Monster counter-attack
             if (gs->monsters[monsterCode].hp > 0) {
                 int rolledMonsterAtk = rollStat(gs->monsters[monsterCode].atk);
                 int rolledHeroDef = rollStat(gs->hero.def);
@@ -534,7 +534,7 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
                 }
             }
         } else if (action == 2) {
-            // Fugir: você leva um hit e não ganha moedas
+            // Flee: take a hit from behind and forfeit coins
             printf("\n> Você deu meia-volta e tentou fugir!\n");
             int rolledMonsterAtk = rollStat(gs->monsters[monsterCode].atk);
             int rolledHeroDef = rollStat(gs->hero.def);
