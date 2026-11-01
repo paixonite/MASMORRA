@@ -1252,6 +1252,53 @@ int highscoresMenu(GameState *gs, highscore_entry_t* highscores) {
     return 0;
 }
 
+// ================= [ DUNGEON LOOP ] ========================================= //
+
+void playDungeon(GameState *gs) {
+    int monsterCode = 0;
+    bool chestOpened = false;
+
+    for (int floor = 0; floor < 5; ++floor) {
+        gs->currentFloor++;
+        gs->eliteSpawnedThisFloor = false;
+        gs->mimicSpawnedThisFloor = false;
+        clearScreen();
+        dungeonDialog(gs);
+        
+        for (int i = 0; i < 3; ++i) {
+            gs->isDead = monsterInteraction(gs, monsterCode);
+            if (gs->isDead)
+                return;
+            monsterCode++;
+
+            // Mimic: 10% chance to appear after any defeated enemy, at most 1 per floor
+            if (!gs->mimicSpawnedThisFloor && (rand() % 10 == 0)) {
+                gs->mimicSpawnedThisFloor = true;
+                gs->isDead = mimicInteraction(gs, &chestOpened);
+                if (gs->isDead)
+                    return;
+            }
+        }
+        
+        shopDialog(gs);
+        shopInteraction(gs, gs->currentFloor);
+    }
+    
+    gs->currentFloor++;
+    clearScreen();
+    dungeonDialog(gs);
+    printsXaopai();
+    gs->monsters[XAOPAI].maxHp = 1750 - gs->hero.def * 3;
+    gs->isDead = xaopaiInteraction(gs);
+    
+    if (gs->isDead)
+        return;
+    else if (gs->fledXaopai)
+        printsCowardEnding(gs);
+    else
+        ending(gs);
+}
+
 // ================= [ MAIN LOOP ] ============================================ //
 
 int main() {
@@ -1280,9 +1327,7 @@ int main() {
     do {
         GameState gs = {0};
         
-        int monsterCode = 0;
         gs.currentFloor = 0;
-        bool chestOpened = false;
         gs.score = 0;
         gs.isDead = false;
         
@@ -1317,47 +1362,7 @@ int main() {
         
         shopInteraction(&gs, gs.currentFloor);
         
-        for (int floor = 0; floor < 5; ++floor) {
-            gs.currentFloor++;
-            gs.eliteSpawnedThisFloor = false;
-            gs.mimicSpawnedThisFloor = false;
-            clearScreen();
-            dungeonDialog(&gs);
-            
-            for (int i = 0; i < 3; ++i) {
-                gs.isDead = monsterInteraction(&gs, monsterCode);
-                if (gs.isDead)
-                    goto TheEnd;
-                monsterCode++;
-
-                // Mimic: 10% chance to appear after any defeated enemy, at most 1 per floor
-                if (!gs.mimicSpawnedThisFloor && (rand() % 10 == 0)) {
-                    gs.mimicSpawnedThisFloor = true;
-                    gs.isDead = mimicInteraction(&gs, &chestOpened);
-                    if (gs.isDead)
-                        goto TheEnd;
-                }
-            }
-            
-            shopDialog(&gs);
-            shopInteraction(&gs, gs.currentFloor);
-        }
-        
-        gs.currentFloor++;
-        clearScreen();
-        dungeonDialog(&gs);
-        printsXaopai();
-        gs.monsters[XAOPAI].maxHp = 1750 - gs.hero.def * 3;
-        gs.isDead = xaopaiInteraction(&gs);
-        
-        if (gs.isDead)
-            goto TheEnd;
-        else if (gs.fledXaopai)
-            printsCowardEnding(&gs);
-        else
-            ending(&gs);
-        
-        TheEnd:
+        playDungeon(&gs);
         
         if (!gs.isDead)
             gamesWon++;
