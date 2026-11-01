@@ -78,6 +78,7 @@ typedef struct {
     char pronoum;
     bool eliteSpawnedThisFloor;
     bool fledXaopai;
+    bool mimicSpawnedThisFloor;
 } GameState;
 
 // ================= [ ENGINE & INPUTS ] ====================================== //
@@ -156,6 +157,7 @@ void initGameData(GameState *gs) {
     gs->pronoum = 'o';
     gs->eliteSpawnedThisFloor = false;
     gs->fledXaopai = false;
+    gs->mimicSpawnedThisFloor = false;
 
     // Initialize Hero
     gs->hero.coins = 150;
@@ -885,6 +887,167 @@ void printsCowardEnding(GameState *gs) {
 
 // ================= [ COMBAT & EVENT FUNCTIONS ] ============================== //
 
+bool mimicInteraction(GameState *gs, bool *chestOpened) {
+    enemy_t mimic = {0};
+    strcpy(mimic.name, "Mímico");
+    switch(gs->currentFloor) {
+        case 1:
+            mimic.maxHp = rand() % 21 + 40;
+            break;
+        case 2:
+            mimic.maxHp = rand() % 31 + 60;
+            break;
+        case 3:
+            mimic.maxHp = rand() % 31 + 80;
+            break;
+        case 4:
+            mimic.maxHp = rand() % 31 + 90;
+            break;
+        case 5:
+            mimic.maxHp = rand() % 31 + 100;
+            break;
+    }
+    mimic.atk = gs->hero.def + 10;
+    mimic.def = 0;
+    mimic.hp = mimic.maxHp;
+    mimic.coins = rand() % (50 * gs->currentFloor) + 50;
+
+    printf("> Você encontrou um baú!\n");
+    printf("[1] Chutar violentamente\n");
+    printf("[2] Ignorar\n");
+
+    int action;
+    do {
+        action = readInt();
+        switch(action) {
+            case 0:
+                showsInfo(gs, NULL);
+                printf("|Baú|\n");
+                printf(" ???\n\n");
+                break;
+
+            case 1:
+                break;
+
+            case 2:
+                printf("\n> Você decidiu não arriscar e seguiu em frente.\n\n");
+                return false;
+
+            default:
+                printf("> Comando não encontrado.\n\n");
+                break;
+        }
+    } while(action != 1);
+
+    printf("\n> O Baú era um mímico!\n\n");
+
+    bool fled = false;
+    do {
+        printf("[1] Atacar\n");
+        printf("[2] Fugir\n");
+        if (gs->hero.potions > 0)
+            printf("[3] Usar poção de cura (x%i)\n", gs->hero.potions);
+        action = readInt();
+        switch(action) {
+            case 0:
+                showsInfo(gs, &mimic);
+                break;
+            case 1: {
+                int rolledHeroAtk = rollStat(gs->hero.atk);
+                int rolledMimicDef = rollStat(mimic.def);
+                int heroDamage = rolledHeroAtk - rolledMimicDef;
+
+                if (heroDamage <= 0) {
+                    printf("\n> Você atacou o %s, mas ele repeliu seu golpe!\n", mimic.name);
+                } else {
+                    bool isCrit = (rand() % 10 == 0);
+                    if (isCrit) {
+                        heroDamage = (heroDamage * 3 + 1) / 2;
+                        printf("\n> GOLPE CRÍTICO! Você atacou o %s causando %i de dano!\n", mimic.name, heroDamage);
+                    } else {
+                        printf("\n> Você atacou o %s causando %i de dano!\n", mimic.name, heroDamage);
+                    }
+                    mimic.hp -= heroDamage;
+                }
+
+                if (mimic.hp > 0) {
+                    int rolledMimicAtk = rollStat(mimic.atk);
+                    int rolledHeroDef = rollStat(gs->hero.def);
+                    int mimicDamage = rolledMimicAtk - rolledHeroDef;
+
+                    if (mimicDamage <= 0) {
+                        printf("> %s tentou te morder, mas sua defesa bloqueou!\n\n", mimic.name);
+                    } else {
+                        gs->hero.hp -= mimicDamage;
+                        printf("> %s te mordeu causando %i de dano!\n\n", mimic.name, mimicDamage);
+                    }
+                    if (gs->hero.hp <= 0) {
+                        clearScreen();
+                        printf("VOCÊ MORREU PARA %s NO PISO %i\n\a", mimic.name, gs->currentFloor);
+                        printf("Pontuação: %i\n", gs->score);
+                        return true;
+                    }
+                }
+                break;
+            }
+            case 2: {
+                printf("\n> Você deu meia-volta e tentou fugir do mímico!\n");
+                int rolledMimicAtk = rollStat(mimic.atk);
+                int rolledHeroDef = rollStat(gs->hero.def);
+                int mimicDamage = rolledMimicAtk - rolledHeroDef;
+
+                if (mimicDamage <= 0) {
+                    printf("> %s tentou te morder pelas costas, mas você conseguiu se esquivar!\n", mimic.name);
+                } else {
+                    gs->hero.hp -= mimicDamage;
+                    printf("> %s te mordeu pelas costas causando %i de dano!\n", mimic.name, mimicDamage);
+                }
+                if (gs->hero.hp <= 0) {
+                    clearScreen();
+                    printf("VOCÊ MORREU PARA %s TENTANDO FUGIR NO PISO %i\n\a", mimic.name, gs->currentFloor);
+                    printf("Pontuação: %i\n", gs->score);
+                    return true;
+                }
+                printf("> Você conseguiu escapar com vida pelos corredores!\n\n");
+                fled = true;
+                mimic.hp = 0;
+                break;
+            }
+            case 3:
+                if (gs->hero.potions <= 0) {
+                    printf("\n> Você não tem poções de cura guardadas!\n\n");
+                } else if (gs->hero.hp >= gs->hero.maxHp) {
+                    printf("\n> Sua saúde já está no máximo!\n\n");
+                } else {
+                    gs->hero.potions--;
+                    int heal = gs->hero.maxHp / 2;
+                    if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
+                    gs->hero.hp += heal;
+                    printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", heal, gs->hero.potions);
+                }
+                break;
+            default:
+                printf("> Comando não encontrado.\n\n");
+                break;
+        }
+    } while(mimic.hp > 0);
+
+    if (!fled) {
+        gs->score += mimic.coins;
+        gs->hero.coins += mimic.coins;
+        printf("> Você derrotou o %s!\n", mimic.name);
+        printf("> Você encontrou %d moedas!\n\n", mimic.coins);
+
+        if (*chestOpened == false) {
+            gs->secretNumber = rand() % 900 + 100;
+            printf("> Você encontra uma marcação suspeita gravada no fundo do baú: %i\n\n", gs->secretNumber);
+            *chestOpened = true;
+        }
+    }
+
+    return false;
+}
+
 bool chest(GameState *gs, bool *chestOpened) {
     if (rand() % 5 == 0) {
         enemy_t chestEnemy = {0};
@@ -917,131 +1080,7 @@ bool chest(GameState *gs, bool *chestOpened) {
             }
         } while(action != 1 && action != 2);
 
-        if (rand() % 3 == 0 && !run) {
-            strcpy(chestEnemy.name, "Mímico");
-            switch(gs->currentFloor) {
-                case 1:
-                    chestEnemy.maxHp = rand() % 21 + 40;
-                    break;
-                case 2:
-                    chestEnemy.maxHp = rand() % 31 + 60;
-                    break;
-                case 3:
-                    chestEnemy.maxHp = rand() % 31 + 80;
-                    break;
-                case 4:
-                    chestEnemy.maxHp = rand() % 31 + 90;
-                    break;
-                case 5:
-                    chestEnemy.maxHp = rand() % 31 + 100;
-                    break;
-            }
-            chestEnemy.atk = gs->hero.def + 10;
-            chestEnemy.def = 0;
-            chestEnemy.hp = chestEnemy.maxHp;
-            chestEnemy.coins = rand() % (50 * gs->currentFloor) + 50;
-
-            bool fled = false;
-            printf("> O Baú era um mímico!\n\n");
-
-            do {
-                printf("[1] Atacar\n");
-                printf("[2] Fugir\n");
-                if (gs->hero.potions > 0)
-                    printf("[3] Usar poção de cura (x%i)\n", gs->hero.potions);
-                action = readInt();
-                switch(action) {
-                    case 0:
-                        showsInfo(gs, &chestEnemy);
-                        break;
-                    case 1: {
-                        int rolledHeroAtk = rollStat(gs->hero.atk);
-                        int rolledMimicDef = rollStat(chestEnemy.def);
-                        int heroDamage = rolledHeroAtk - rolledMimicDef;
-
-                        if (heroDamage <= 0) {
-                            printf("\n> Você atacou o %s, mas ele repeliu seu golpe!\n", chestEnemy.name);
-                        } else {
-                            bool isCrit = (rand() % 10 == 0);
-                            if (isCrit) {
-                                heroDamage = (heroDamage * 3 + 1) / 2;
-                                printf("\n> GOLPE CRÍTICO! Você atacou o %s causando %i de dano!\n", chestEnemy.name, heroDamage);
-                            } else {
-                                printf("\n> Você atacou o %s causando %i de dano!\n", chestEnemy.name, heroDamage);
-                            }
-                            chestEnemy.hp -= heroDamage;
-                        }
-
-                        if (chestEnemy.hp > 0) {
-                            int rolledMimicAtk = rollStat(chestEnemy.atk);
-                            int rolledHeroDef = rollStat(gs->hero.def);
-                            int mimicDamage = rolledMimicAtk - rolledHeroDef;
-
-                            if (mimicDamage <= 0) {
-                                printf("> %s tentou te morder, mas sua defesa bloqueou!\n\n", chestEnemy.name);
-                            } else {
-                                gs->hero.hp -= mimicDamage;
-                                printf("> %s te mordeu causando %i de dano!\n\n", chestEnemy.name, mimicDamage);
-                            }
-                            if (gs->hero.hp <= 0) {
-                                clearScreen();
-                                printf("VOCÊ MORREU PARA %s NO PISO %i\n\a", chestEnemy.name, gs->currentFloor);
-                                printf("Pontuação: %i\n", gs->score);
-                                return true;
-                            }
-                        }
-                        break;
-                    }
-                    case 2: {
-                        printf("\n> Você deu meia-volta e tentou fugir do mímico!\n");
-                        int rolledMimicAtk = rollStat(chestEnemy.atk);
-                        int rolledHeroDef = rollStat(gs->hero.def);
-                        int mimicDamage = rolledMimicAtk - rolledHeroDef;
-
-                        if (mimicDamage <= 0) {
-                            printf("> %s tentou te morder pelas costas, mas você conseguiu se esquivar!\n", chestEnemy.name);
-                        } else {
-                            gs->hero.hp -= mimicDamage;
-                            printf("> %s te mordeu pelas costas causando %i de dano!\n", chestEnemy.name, mimicDamage);
-                        }
-                        if (gs->hero.hp <= 0) {
-                            clearScreen();
-                            printf("VOCÊ MORREU PARA %s TENTANDO FUGIR NO PISO %i\n\a", chestEnemy.name, gs->currentFloor);
-                            printf("Pontuação: %i\n", gs->score);
-                            return true;
-                        }
-                        printf("> Você conseguiu escapar do mímico!\n\n");
-                        fled = true;
-                        chestEnemy.hp = 0;
-                        break;
-                    }
-                    case 3:
-                        if (gs->hero.potions <= 0) {
-                            printf("\n> Você não tem poções de cura guardadas!\n\n");
-                        } else if (gs->hero.hp >= gs->hero.maxHp) {
-                            printf("\n> Sua saúde já está no máximo!\n\n");
-                        } else {
-                            gs->hero.potions--;
-                            int heal = gs->hero.maxHp / 2;
-                            if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
-                            gs->hero.hp += heal;
-                            printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", heal, gs->hero.potions);
-                        }
-                        break;
-                    default:
-                        printf("> Comando não encontrado.\n\n");
-                        break;
-                }
-            } while(chestEnemy.hp > 0);
-            
-            if (!fled) {
-                gs->score += chestEnemy.coins;
-                gs->hero.coins += chestEnemy.coins;
-                printf("> Você derrotou o %s!\n", chestEnemy.name);
-                printf("> Você encontrou %d moedas!\n\n", chestEnemy.coins);
-            }
-
-        } else if (!run) {
+        if (!run) {
             strcpy(chestEnemy.name, "Baú de madeira");
             chestEnemy.maxHp = 100 * gs->currentFloor;
             chestEnemy.hp = chestEnemy.maxHp;
@@ -1364,6 +1403,7 @@ int main() {
         for (int floor = 0; floor < 5; ++floor) {
             gs.currentFloor++;
             gs.eliteSpawnedThisFloor = false;
+            gs.mimicSpawnedThisFloor = false;
             clearScreen();
             dungeonDialog(&gs);
             
@@ -1372,6 +1412,14 @@ int main() {
                 if (gs.isDead)
                     goto TheEnd;
                 monsterCode++;
+
+                // Mimic: 10% chance to appear after any defeated enemy, at most 1 per floor
+                if (!gs.mimicSpawnedThisFloor && (rand() % 10 == 0)) {
+                    gs.mimicSpawnedThisFloor = true;
+                    gs.isDead = mimicInteraction(&gs, &chestOpened);
+                    if (gs.isDead)
+                        goto TheEnd;
+                }
             }
             
             if (chest(&gs, &chestOpened))
