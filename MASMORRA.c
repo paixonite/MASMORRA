@@ -76,6 +76,7 @@ typedef struct {
     bool isDead;
     int secretNumber;
     char pronoum;
+    bool eliteSpawnedThisFloor;
 } GameState;
 
 // ================= [ ENGINE & INPUTS ] ====================================== //
@@ -152,6 +153,7 @@ void readString(char* buffer, int maxLength) {
 void initGameData(GameState *gs) {
     // Pronoun
     gs->pronoum = 'o';
+    gs->eliteSpawnedThisFloor = false;
 
     // Inicializa o Herói
     gs->hero.coins = 150;
@@ -426,9 +428,10 @@ int rollStat(int baseStat) {
 
 bool monsterInteraction(GameState *gs, int monsterCode) {
     bool isElite = false;
-    // 20% de chance de gerar um monstro Elite
-    if (rand() % 5 == 0) {
+    // Monstros Elite: só aparecem depois do primeiro andar e no máximo 1 por andar
+    if (gs->currentFloor > 1 && !gs->eliteSpawnedThisFloor && (rand() % 5 == 0)) {
         isElite = true;
+        gs->eliteSpawnedThisFloor = true;
         char originalName[40];
         strncpy(originalName, gs->monsters[monsterCode].name, sizeof(originalName) - 1);
         originalName[sizeof(originalName) - 1] = '\0';
@@ -1339,6 +1342,7 @@ int main() {
         
         for (int floor = 0; floor < 5; ++floor) {
             gs.currentFloor++;
+            gs.eliteSpawnedThisFloor = false;
             clearScreen();
             dungeonDialog(&gs);
             
