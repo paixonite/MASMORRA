@@ -17,11 +17,15 @@
 #define HIGHSCORES_NUM 11
 #define XAOPAI 15
 
-// Cross-platform screen clear macros
+// Cross-platform screen clear and terminal animation macros
 #ifdef _WIN32
     #include <windows.h>
+    #include <conio.h>
+    #include <io.h>
     #define CLEAR_CMD "cls"
 #else
+    #include <unistd.h>
+    #include <sys/select.h>
     #define CLEAR_CMD "clear" // Linux/macOS uses native clear
 #endif
 
@@ -318,18 +322,102 @@ void initGameData(GameState *gs) {
  */
 
 void titleScreen() {
+    const char *flames[4][3] = {
+        {
+            "  (  . ",
+            " (  )  ",
+            "( ()  )"
+        },
+        {
+            "   , ) ",
+            " ( ) ) ",
+            "(  )( )"
+        },
+        {
+            "  .  ) ",
+            "  (  ) ",
+            "(  () )"
+        },
+        {
+            "  ( ,  ",
+            " ( ( ) ",
+            "( )(  )"
+        }
+    };
+
     clearScreen();
-    printf("********************************************************************************\n");
-    printf("                                  BEM-VINDO À                                   \n");
-    printf("             __  __    _    ____  __  __  ___  ____  ____      _                \n");
-    printf("            |  \\/  |  / \\  / ___||  \\/  |/ _ \\|  _ \\|  _ \\    / \\        \n");
-    printf("            | |\\/| | / _ \\ \\___ \\| |\\/| | | | | |_) | |_) |  / _ \\        \n");
-    printf("            | |  | |/ ___ \\ ___) | |  | | |_| |  _ <|  _ <  / ___ \\           \n");
-    printf("            |_|  |_/_/   \\_\\____/|_|  |_|\\___/|_| \\_\\_| \\_\\/_/   \\_\\   \n");
-    printf("                                  by: Paixão                                    \n");
-    printf("********************************************************************************\n\n");
-    printf("                      Pressione enter para continuar...                         \n");
-    getchar();
+
+    #ifdef _WIN32
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    #else
+        bool isTty = (isatty(STDIN_FILENO) != 0);
+    #endif
+
+    int frame = 0;
+    bool running = true;
+
+    while (running) {
+        #ifdef _WIN32
+            COORD homeCoords = {0, 0};
+            SetConsoleCursorPosition(hOut, homeCoords);
+        #else
+            if (isTty) {
+                printf("\033[H");
+            }
+        #endif
+
+        printf("********************************************************************************\n");
+        printf("  %s                         BEM-VINDO À                          %s  \n", flames[frame][0], flames[frame][0]);
+        printf("  %s    __  __    _    ____  __  __  ___  ____  ____      _       %s  \n", flames[frame][1], flames[frame][1]);
+        printf("  %s   |  \\/  |  / \\  / ___||  \\/  |/ _ \\|  _ \\|  _ \\    / \\      %s  \n", flames[frame][2], flames[frame][2]);
+        printf("  \\=====/   | |\\/| | / _ \\ \\___ \\| |\\/| | | | | |_) | |_) |  / _ \\     \\=====/  \n");
+        printf("   \\   /    | |  | |/ ___ \\ ___) | |  | | |_| |  _ <|  _ <  / ___ \\     \\   /   \n");
+        printf("    | |     |_|  |_/_/   \\_\\____/|_|  |_|\\___/|_| \\_\\_| \\_\\/_/   \\_\\     | |    \n");
+        printf("    |_|                           by: Paixão                             |_|    \n");
+        printf("********************************************************************************\n\n");
+        printf("                      Pressione enter para continuar...                         \n");
+        fflush(stdout);
+
+        #ifdef _WIN32
+            if (!_isatty(_fileno(stdin))) {
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
+                break;
+            }
+            for (int i = 0; i < 9; i++) {
+                if (_kbhit()) {
+                    int ch = _getch();
+                    if (ch == '\r' || ch == '\n') {
+                        running = false;
+                        break;
+                    }
+                }
+                Sleep(20);
+            }
+        #else
+            if (!isTty) {
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
+                break;
+            }
+            fd_set readfds;
+            FD_ZERO(&readfds);
+            FD_SET(STDIN_FILENO, &readfds);
+            struct timeval tv;
+            tv.tv_sec = 0;
+            tv.tv_usec = 180000;
+
+            int ret = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &tv);
+            if (ret > 0 && FD_ISSET(STDIN_FILENO, &readfds)) {
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
+                running = false;
+            }
+        #endif
+
+        frame = (frame + 1) % 4;
+    }
+
     clearScreen();
 }
 
