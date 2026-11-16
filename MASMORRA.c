@@ -1189,6 +1189,14 @@ void printsCowardEnding(GameState *gs) {
 
 // ================= [ COMBAT & EVENT FUNCTIONS ] ============================== //
 
+void revealChestSecret(GameState *gs, bool *chestOpened) {
+    if (*chestOpened == false) {
+        gs->secretNumber = rand() % 900 + 100;
+        printf("> Você encontra uma marcação suspeita gravada no fundo do baú: %s%i%s\n\n", CLR(ANSI_BMAGENTA), gs->secretNumber, CLR(ANSI_RESET));
+        *chestOpened = true;
+    }
+}
+
 bool mimicInteraction(GameState *gs, bool *chestOpened) {
     enemy_t mimic = {0};
     strcpy(mimic.name, "Mímico");
@@ -1240,6 +1248,16 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
                 break;
         }
     } while(action != 1);
+
+    if (rand() % 2 == 0) {
+        int chestCoins = (mimic.coins * 3) / 4;
+        gs->score += chestCoins;
+        gs->hero.coins += chestCoins;
+        printf("\n> Você abriu o %sbaú%s!\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+        printf("> Você encontrou %s%d moedas%s!\n\n", CLR(ANSI_BYELLOW), chestCoins, CLR(ANSI_RESET));
+        revealChestSecret(gs, chestOpened);
+        return false;
+    }
 
     printf("\n> O Baú era um %smímico%s!\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
 
@@ -1342,11 +1360,7 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
         printf("> Você derrotou o %s%s%s!\n", CLR(ANSI_BRED), mimic.name, CLR(ANSI_RESET));
         printf("> Você encontrou %s%d moedas%s!\n\n", CLR(ANSI_BYELLOW), mimic.coins, CLR(ANSI_RESET));
 
-        if (*chestOpened == false) {
-            gs->secretNumber = rand() % 900 + 100;
-            printf("> Você encontra uma marcação suspeita gravada no fundo do baú: %s%i%s\n\n", CLR(ANSI_BMAGENTA), gs->secretNumber, CLR(ANSI_RESET));
-            *chestOpened = true;
-        }
+        revealChestSecret(gs, chestOpened);
     }
 
     return false;
