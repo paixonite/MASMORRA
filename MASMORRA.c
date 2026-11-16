@@ -203,7 +203,13 @@ typedef struct {
 typedef struct {
     char name[STR_LENGTH];
     int score;
+    bool defeatedXaopai;
 } highscore_entry_t;
+
+typedef struct {
+    char name[STR_LENGTH];
+    int score;
+} legacy_highscore_entry_t;
 
 // Encapsulated Global Game State
 typedef struct {
@@ -218,6 +224,8 @@ typedef struct {
     bool eliteSpawnedThisFloor;
     bool fledXaopai;
     bool mimicSpawnedThisFloor;
+    bool defeatedXaopai;
+    bool isCheatRun;
 } GameState;
 
 // ================= [ ENGINE & INPUTS ] ====================================== //
@@ -1034,6 +1042,9 @@ void shopInteraction(GameState *gs, int shopCode) {
 int compareHighscores(const void* a, const void* b) {
     const highscore_entry_t* h1 = (const highscore_entry_t*)a;
     const highscore_entry_t* h2 = (const highscore_entry_t*)b;
+    if (h1->defeatedXaopai != h2->defeatedXaopai) {
+        return (int)h2->defeatedXaopai - (int)h1->defeatedXaopai;
+    }
     return h2->score - h1->score;
 }
 
@@ -1550,7 +1561,9 @@ bool xaopaiInteraction(GameState *gs) {
                     turnsSinceCharge = 0;
                     printf("> %sO corpo de XÃOPAI se desfaz em chamas negras! SEUS OLHOS BRILHAM EM FÚRIA ABISSAL!%s\n",
                            CLR(ANSI_BRED), CLR(ANSI_RESET));
-                    printf("%sXÃOPAI: VOCÊ JAMAIS SAIRÁ VIVO DESTE TEMPLO! (O ataque de XÃOPAI aumentou!)%s\n",
+                    printf("> %s(O ataque de XÃOPAI aumentou!)%s\n",
+                           CLR(ANSI_BRED), CLR(ANSI_RESET));
+                    printf("%sXÃOPAI: VOCÊ JAMAIS SAIRÁ VIVO DESTE TEMPLO!%s\n",
                            CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
                     printf("> %s[!] XÃOPAI ergue os braços e concentra uma esfera de energia abissal!%s\n\n",
                            CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
@@ -1567,7 +1580,8 @@ bool xaopaiInteraction(GameState *gs) {
         }
     } while (gs->monsters[XAOPAI].hp > 0);
 
-    gs->score += 10000;
+    gs->defeatedXaopai = true;
+    gs->score += 1000;
     printf("> %sVOCÊ DERROTOU O ESPÍRITO DE %sXÃOPAI%s!%s\n\n", CLR(ANSI_BGREEN), CLR(ANSI_BMAGENTA), CLR(ANSI_BGREEN), CLR(ANSI_RESET));
     return false;
 }
@@ -1607,21 +1621,44 @@ void ending(GameState *gs) {
     printf("Pontuação: %s%i%s\n\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
 }
 
-void updatesHighscores(GameState *gs, highscore_entry_t* highscores) {
+void loadHighscores(highscore_entry_t* highscores) {
+    memset(highscores, 0, sizeof(highscore_entry_t) * HIGHSCORES_NUM);
     FILE *file = fopen("Highscores.bin", "rb");
+    if (file == NULL) {
+        return;
+    }
 
-    if (file != NULL) {
-        size_t readCount = fread(highscores, sizeof(highscore_entry_t), HIGHSCORES_NUM, file);
-        for (size_t i = readCount; i < HIGHSCORES_NUM; ++i) {
-            highscores[i].score = 0;
-            highscores[i].name[0] = '\0';
+    if (fseek(file, 0, SEEK_END) == 0) {
+        long fileSize = ftell(file);
+        rewind(file);
+
+        if (fileSize == (long)(sizeof(legacy_highscore_entry_t) * HIGHSCORES_NUM)) {
+            legacy_highscore_entry_t legacy[HIGHSCORES_NUM] = {0};
+            size_t readCount = fread(legacy, sizeof(legacy_highscore_entry_t), HIGHSCORES_NUM, file);
+            for (size_t i = 0; i < readCount; ++i) {
+                strncpy(highscores[i].name, legacy[i].name, STR_LENGTH - 1);
+                highscores[i].name[STR_LENGTH - 1] = '\0';
+                highscores[i].defeatedXaopai = (legacy[i].score >= 10000);
+                highscores[i].score = highscores[i].defeatedXaopai ? (legacy[i].score - 10000) : legacy[i].score;
+            }
+            fclose(file);
+            return;
         }
-        fclose(file);
-    } else {
-        memset(highscores, 0, sizeof(highscore_entry_t) * HIGHSCORES_NUM);
+    }
+
+    fread(highscores, sizeof(highscore_entry_t), HIGHSCORES_NUM, file);
+    fclose(file);
+}
+
+void updatesHighscores(GameState *gs, highscore_entry_t* highscores) {
+    loadHighscores(highscores);
+
+    if (gs->isCheatRun) {
+        return;
     }
 
     highscores[HIGHSCORES_NUM - 1].score = gs->score;
+    highscores[HIGHSCORES_NUM - 1].defeatedXaopai = gs->defeatedXaopai;
     if (strlen(gs->hero.name) > 0) {
         strncpy(highscores[HIGHSCORES_NUM - 1].name, gs->hero.name, STR_LENGTH - 1);
         highscores[HIGHSCORES_NUM - 1].name[STR_LENGTH - 1] = '\0';
@@ -1631,7 +1668,7 @@ void updatesHighscores(GameState *gs, highscore_entry_t* highscores) {
 
     qsort(highscores, HIGHSCORES_NUM, sizeof(highscore_entry_t), compareHighscores);
 
-    file = fopen("Highscores.bin", "wb");
+    FILE *file = fopen("Highscores.bin", "wb");
     if (file == NULL) {
         perror("Error opening file");
         return;
@@ -1647,17 +1684,21 @@ int highscoresMenu(GameState *gs, highscore_entry_t* highscores) {
     printf("                %s- HIGH SCORES -%s                \n\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
 
     for (int i = 0; i < HIGHSCORES_NUM - 1; ++i) {
-        if (highscores[i].score != 0) {
+        if (highscores[i].score != 0 || highscores[i].defeatedXaopai) {
             const char *rankColor = CLR(ANSI_DIM);
             if (i == 0) rankColor = CLR(ANSI_BYELLOW);
             else if (i == 1) rankColor = CLR(ANSI_BWHITE);
             else if (i == 2) rankColor = CLR(ANSI_YELLOW);
-            printf("            %s%2i - %-18s %5i%s\n", rankColor, i + 1, highscores[i].name, highscores[i].score, CLR(ANSI_RESET));
+            const char *starColor = highscores[i].defeatedXaopai ? CLR(ANSI_BYELLOW) : "";
+            const char *starIcon = highscores[i].defeatedXaopai ? "★" : " ";
+            printf("          %s%s%s %s%2i - %-18s %5i%s\n",
+                   starColor, starIcon, CLR(ANSI_RESET),
+                   rankColor, i + 1, highscores[i].name, highscores[i].score, CLR(ANSI_RESET));
         }
     }
 
-    printf("\n         %s(1)%s Jogar novamente\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
-    printf("         %s(2)%s Sair do jogo\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+    printf("\n         %s[1]%s Jogar novamente\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+    printf("         %s[2]%s Sair do jogo\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
 
     do {
         input = readInt();
@@ -1763,11 +1804,7 @@ int main(int argc, char *argv[]) {
     char heroName[STR_LENGTH] = "";
     char savedPronoun = 'o';
 
-    FILE *initFile = fopen("Highscores.bin", "rb");
-    if (initFile != NULL) {
-        fread(highscores, sizeof(highscore_entry_t), HIGHSCORES_NUM, initFile);
-        fclose(initFile);
-    }
+    loadHighscores(highscores);
     
     int action;
     do {
@@ -1796,6 +1833,7 @@ int main(int argc, char *argv[]) {
             lowerName[i] = tolower(lowerName[i]);
         }
         if (strcmp(lowerName, "paixao") == 0 || strcmp(lowerName, "paixão") == 0 || strcmp(lowerName, "root") == 0) {
+            gs.isCheatRun = true;
             printf("%sLojista:%s Olha só! O próprio criador do jogo! Bom rever você. %s(Pular para loja 0-5?)%s\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET), CLR(ANSI_DIM), CLR(ANSI_RESET));
             gs.hero.coins += 9990;
             int skip = readInt();
