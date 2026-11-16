@@ -1700,10 +1700,10 @@ int highscoresMenu(GameState *gs, highscore_entry_t* highscores) {
 // ================= [ DUNGEON LOOP ] ========================================= //
 
 void playDungeon(GameState *gs) {
-    int monsterCode = 0;
+    int monsterCode = gs->currentFloor * 3;
     bool chestOpened = false;
 
-    for (int floor = 0; floor < 5; ++floor) {
+    for (int floor = gs->currentFloor; floor < 5; ++floor) {
         gs->currentFloor++;
         gs->eliteSpawnedThisFloor = false;
         gs->mimicSpawnedThisFloor = false;
@@ -1795,9 +1795,18 @@ int main(int argc, char *argv[]) {
         for (int i = 0; lowerName[i]; i++) {
             lowerName[i] = tolower(lowerName[i]);
         }
-        if (strcmp(lowerName, "paixao") == 0 || strcmp(lowerName, "paixão") == 0) {
-            printf("%sLojista:%s Olha só! O próprio criador do jogo! Bom rever você.\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+        if (strcmp(lowerName, "paixao") == 0 || strcmp(lowerName, "paixão") == 0 || strcmp(lowerName, "root") == 0) {
+            printf("%sLojista:%s Olha só! O próprio criador do jogo! Bom rever você. %s(Pular para loja 0-5?)%s\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET), CLR(ANSI_DIM), CLR(ANSI_RESET));
             gs.hero.coins += 9990;
+            int skip = readInt();
+            if (skip >= 1 && skip <= 5) {
+                gs.currentFloor = skip;
+                gs.hero.maxHp = gs.hero.hp = 100 + (skip / 2) * 50;
+                strcpy(gs.hero.atkItem, gs.shops[skip - 1].item1Name);
+                gs.hero.atk = gs.shops[skip - 1].item1atkPoints;
+                strcpy(gs.hero.defItem, gs.shops[skip - 1].item2Name);
+                gs.hero.def = gs.shops[skip - 1].item2defPoints;
+            }
         }
         
         shopDialog(&gs);
