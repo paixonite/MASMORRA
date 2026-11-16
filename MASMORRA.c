@@ -860,15 +860,15 @@ void shopDialog(GameState *gs) {
 
         case 3:
             printf("> Você encontra um troll ferreiro, forjando ferramentas com os minérios.\n");
-            printf("Ferreiro: Um humano nesse lugar? Coisa rara de se ver...\n");
-            printf("Posso te dar umas lembrancinhas em troca dessas moedas de ouro.\n\n");
+            printf("Ferreiro: Uai, um humano por essas banda? Trem raro de se vê...\n");
+            printf("Posso arranjá umas lembrancinha procê em troca dessas sua moeda de ouro.\n\n");
             break;
 
         case 4:
             printf("> Um misterioso ser encapuzado aparece das sombras.\n");
-            printf("Ser misterioso: Então é você %c corajos%c %s que busca derrotar o grande Xãopai?\n", 
+            printf("Ser misterioso: Então és tu %c destemid%c %s, que ousas desafiar o temível Xãopai?\n", 
                    gs->pronoum, gs->pronoum, gs->hero.name);
-            printf("Tenha cautela, jovem guerreir%c. O caminho a seguir é perigoso e traiçoeiro.\n\n", 
+            printf("Acautela-te, jovem guerreir%c, pois o percurso adiante é sombrio e traiçoeiro.\n\n", 
                    gs->pronoum);
             break;
 
