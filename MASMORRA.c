@@ -23,11 +23,145 @@
     #include <conio.h>
     #include <io.h>
     #define CLEAR_CMD "cls"
+    #ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+        #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+    #endif
 #else
     #include <unistd.h>
     #include <sys/select.h>
     #define CLEAR_CMD "clear" // Linux/macOS uses native clear
 #endif
+
+// Standard 16-color ANSI SGR escape sequences for universal terminal support
+#define ANSI_RESET      "\033[0m"
+#define ANSI_BOLD       "\033[1m"
+#define ANSI_DIM        "\033[2m"
+#define ANSI_GRAY       "\033[0;90m"
+
+#define ANSI_RED        "\033[31m"
+#define ANSI_GREEN      "\033[32m"
+#define ANSI_YELLOW     "\033[33m"
+#define ANSI_BLUE       "\033[34m"
+#define ANSI_MAGENTA    "\033[35m"
+#define ANSI_CYAN       "\033[36m"
+#define ANSI_WHITE      "\033[37m"
+
+#define ANSI_BRED       "\033[1;31m"
+#define ANSI_BGREEN     "\033[1;32m"
+#define ANSI_BYELLOW    "\033[1;33m"
+#define ANSI_BBLUE      "\033[1;34m"
+#define ANSI_BMAGENTA   "\033[1;35m"
+#define ANSI_BCYAN      "\033[1;36m"
+#define ANSI_BWHITE     "\033[1;37m"
+#define ANSI_ORANGE     "\033[38;5;208m"
+
+static bool g_useColor = false;
+static bool g_use256Color = false;
+#define CLR(code)       (g_useColor ? (code) : "")
+#define CLR_ORANGE()    (g_useColor ? (g_use256Color ? ANSI_ORANGE : ANSI_YELLOW) : "")
+
+static void detect256Color(bool winVtEnabled) {
+    const char *colorTerm = getenv("COLORTERM");
+    const char *term = getenv("TERM");
+    if (winVtEnabled ||
+        getenv("WT_SESSION") != NULL ||
+        (colorTerm != NULL && colorTerm[0] != '\0') ||
+        (term != NULL && strstr(term, "256color") != NULL)) {
+        g_use256Color = true;
+    }
+}
+
+// Detects terminal ANSI support at runtime with safe monochrome fallback
+void initTerminalColors(int argc, char *argv[]) {
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--no-color") == 0) {
+            g_useColor = false;
+            g_use256Color = false;
+            return;
+        }
+        if (strcmp(argv[i], "--color") == 0) {
+            bool winVt = false;
+            #ifdef _WIN32
+                HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+                if (hOut != INVALID_HANDLE_VALUE && hOut != NULL) {
+                    DWORD dwMode = 0;
+                    if (GetConsoleMode(hOut, &dwMode)) {
+                        winVt = SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
+                    }
+                }
+            #endif
+            g_useColor = true;
+            detect256Color(winVt);
+            return;
+        }
+    }
+
+    const char *noColor = getenv("NO_COLOR");
+    if (noColor != NULL && noColor[0] != '\0') {
+        g_useColor = false;
+        g_use256Color = false;
+        return;
+    }
+
+    const char *forceColor = getenv("FORCE_COLOR");
+    if (forceColor != NULL && forceColor[0] != '\0' && strcmp(forceColor, "0") != 0) {
+        bool winVt = false;
+        #ifdef _WIN32
+            HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            if (hOut != INVALID_HANDLE_VALUE && hOut != NULL) {
+                DWORD dwMode = 0;
+                if (GetConsoleMode(hOut, &dwMode)) {
+                    winVt = SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
+                }
+            }
+        #endif
+        g_useColor = true;
+        detect256Color(winVt);
+        return;
+    }
+
+    #ifdef _WIN32
+        if (!_isatty(_fileno(stdout))) {
+            g_useColor = false;
+            return;
+        }
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (hOut != INVALID_HANDLE_VALUE && hOut != NULL) {
+            DWORD dwMode = 0;
+            if (GetConsoleMode(hOut, &dwMode)) {
+                if (SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING)) {
+                    g_useColor = true;
+                    detect256Color(true);
+                    return;
+                }
+            }
+        }
+        const char *wtSession = getenv("WT_SESSION");
+        const char *ansicon = getenv("ANSICON");
+        const char *conEmu = getenv("ConEmuANSI");
+        const char *term = getenv("TERM");
+        if (wtSession != NULL || ansicon != NULL ||
+            (conEmu != NULL && strcmp(conEmu, "ON") == 0) ||
+            (term != NULL && term[0] != '\0' && strcmp(term, "dumb") != 0)) {
+            g_useColor = true;
+            detect256Color(false);
+            return;
+        }
+        g_useColor = false;
+    #else
+        if (!isatty(STDOUT_FILENO)) {
+            g_useColor = false;
+            return;
+        }
+        const char *term = getenv("TERM");
+        if (term == NULL || term[0] == '\0' || strcmp(term, "dumb") == 0) {
+            g_useColor = false;
+            return;
+        }
+        g_useColor = true;
+        detect256Color(false);
+    #endif
+}
 
 void clearScreen() {
     system(CLEAR_CMD);
@@ -107,7 +241,7 @@ int readInt() {
             fflush(stdout);
             if (fgets(inputLine, sizeof(inputLine), stdin) == NULL) {
                 if (feof(stdin)) exit(0);
-                printf("> Entrada inválida.\n");
+                printf("> %sEntrada inválida.%s\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 continue;
             }
             inputPtr = inputLine;
@@ -134,7 +268,7 @@ int readInt() {
         while (*inputPtr && !isspace((unsigned char)*inputPtr)) {
             inputPtr++;
         }
-        printf("> Entrada inválida.\n");
+        printf("> %sEntrada inválida.%s\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
     }
 }
 
@@ -150,7 +284,7 @@ void readString(char* buffer, int maxLength) {
         } else if (feof(stdin)) {
             exit(0);
         }
-        printf("> Entrada inválida.\n");
+        printf("> %sEntrada inválida.%s\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
     }
 }
 
@@ -366,16 +500,20 @@ void titleScreen() {
             }
         #endif
 
-        printf("********************************************************************************\n");
-        printf("  %s                         BEM-VINDO À                          %s  \n", flames[frame][0], flames[frame][0]);
-        printf("  %s    __  __    _    ____  __  __  ___  ____  ____      _       %s  \n", flames[frame][1], flames[frame][1]);
-        printf("  %s   |  \\/  |  / \\  / ___||  \\/  |/ _ \\|  _ \\|  _ \\    / \\      %s  \n", flames[frame][2], flames[frame][2]);
-        printf("  \\=====/   | |\\/| | / _ \\ \\___ \\| |\\/| | | | | |_) | |_) |  / _ \\     \\=====/  \n");
-        printf("   \\   /    | |  | |/ ___ \\ ___) | |  | | |_| |  _ <|  _ <  / ___ \\     \\   /   \n");
-        printf("    | |     |_|  |_/_/   \\_\\____/|_|  |_|\\___/|_| \\_\\_| \\_\\/_/   \\_\\     | |    \n");
-        printf("    |_|                           by: Paixão                             |_|    \n");
-        printf("********************************************************************************\n\n");
-        printf("                      Pressione enter para continuar...                         \n");
+        const char *topFlame = (frame % 2 == 0) ? CLR(ANSI_BYELLOW) : CLR(ANSI_BRED);
+        const char *midFlame = (frame % 2 == 0) ? CLR(ANSI_BRED)    : CLR(ANSI_BYELLOW);
+        const char *botFlame = CLR(ANSI_RED);
+
+        printf("%s********************************************************************************%s\n", CLR_ORANGE(), CLR(ANSI_RESET));
+        printf("  %s%s%s                         %sBEM-VINDO À%s                          %s%s%s  \n", topFlame, flames[frame][0], CLR(ANSI_RESET), CLR(ANSI_BWHITE), CLR(ANSI_RESET), topFlame, flames[frame][0], CLR(ANSI_RESET));
+        printf("  %s%s%s    %s__  __    _    ____  __  __  ___  ____  ____      _%s       %s%s%s  \n", midFlame, flames[frame][1], CLR(ANSI_RESET), CLR(ANSI_RED), CLR(ANSI_RESET), midFlame, flames[frame][1], CLR(ANSI_RESET));
+        printf("  %s%s%s   %s|  \\/  |  / \\  / ___||  \\/  |/ _ \\|  _ \\|  _ \\    / \\%s      %s%s%s  \n", botFlame, flames[frame][2], CLR(ANSI_RESET), CLR(ANSI_RED), CLR(ANSI_RESET), botFlame, flames[frame][2], CLR(ANSI_RESET));
+        printf("  %s\\=====/%s   %s| |\\/| | / _ \\ \\___ \\| |\\/| | | | | |_) | |_) |  / _ \\%s     %s\\=====/%s  \n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_RED), CLR(ANSI_RESET), CLR(ANSI_YELLOW), CLR(ANSI_RESET));
+        printf("   %s\\   /%s    %s| |  | |/ ___ \\ ___) | |  | | |_| |  _ <|  _ <  / ___ \\%s     %s\\   /%s   \n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_RED), CLR(ANSI_RESET), CLR(ANSI_YELLOW), CLR(ANSI_RESET));
+        printf("    %s| |%s     %s|_|  |_/_/   \\_\\____/|_|  |_|\\___/|_| \\_\\_| \\_\\/_/   \\_\\%s     %s| |%s    \n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_RED), CLR(ANSI_RESET), CLR(ANSI_YELLOW), CLR(ANSI_RESET));
+        printf("    %s|_|%s                           by: Paixão                             %s|_|%s    \n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_YELLOW), CLR(ANSI_RESET));
+        printf("%s********************************************************************************%s\n\n", CLR_ORANGE(), CLR(ANSI_RESET));
+        printf("                      %sPressione enter para continuar...%s                         \n", CLR(ANSI_DIM), CLR(ANSI_RESET));
         fflush(stdout);
 
         #ifdef _WIN32
@@ -427,35 +565,46 @@ void printHpBar(int current, int max) {
     int filled = (max > 0) ? (current * length) / max : 0;
     if (filled > length) filled = length;
     if (filled < 0) filled = 0;
+
+    const char *hpColor = CLR(ANSI_BRED);
+    if (current * 2 > max) {
+        hpColor = CLR(ANSI_BGREEN);
+    } else if (current * 4 > max) {
+        hpColor = CLR(ANSI_BYELLOW);
+    }
+
     printf("[");
+    printf("%s", hpColor);
     for (int i = 0; i < filled; i++) {
         printf("█");
     }
+    printf("%s%s", CLR(ANSI_RESET), CLR(ANSI_DIM));
     for (int i = filled; i < length; i++) {
         printf("░");
     }
-    printf("] %i/%i\n", current, max);
+    printf("%s] %s%i/%i%s\n", CLR(ANSI_RESET), hpColor, current, max, CLR(ANSI_RESET));
 }
 
 void showsInfo(GameState *gs, const enemy_t *enemy) {
-    printf("\n+---------------- [ STATUS ] ----------------+\n");
-    printf("| - %s\n", gs->hero.name);
-    printf("|   Saúde:  ");
+    printf("\n%s+---------------- [ %sSTATUS%s%s ] ----------------+%s\n", CLR(ANSI_CYAN), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_CYAN), CLR(ANSI_RESET));
+    printf("%s|%s - %s%s%s\n", CLR(ANSI_CYAN), CLR(ANSI_RESET), CLR(ANSI_BWHITE), gs->hero.name, CLR(ANSI_RESET));
+    printf("%s|%s   Saúde:  ", CLR(ANSI_CYAN), CLR(ANSI_RESET));
     printHpBar(gs->hero.hp, gs->hero.maxHp);
-    printf("|   Poções: %i\n", gs->hero.potions);
-    printf("|   Moedas: %i\n", gs->hero.coins);
-    printf("|   Ataque: %i (%s)\n", gs->hero.atk, gs->hero.atkItem);
-    printf("|   Defesa: %i (%s)\n", gs->hero.def, gs->hero.defItem);
+    printf("%s|%s   Poções: %i\n", CLR(ANSI_CYAN), CLR(ANSI_RESET), gs->hero.potions);
+    printf("%s|%s   Moedas: %s%i%s\n", CLR(ANSI_CYAN), CLR(ANSI_RESET), CLR(ANSI_BYELLOW), gs->hero.coins, CLR(ANSI_RESET));
+    printf("%s|%s   Ataque: %i (%s)\n", CLR(ANSI_CYAN), CLR(ANSI_RESET), gs->hero.atk, gs->hero.atkItem);
+    printf("%s|%s   Defesa: %i (%s)\n", CLR(ANSI_CYAN), CLR(ANSI_RESET), gs->hero.def, gs->hero.defItem);
 
     if (enemy != NULL) {
-        printf("+--------------------------------------------+\n");
-        printf("| - %s\n", enemy->name);
-        printf("|   Saúde:  ");
+        const char *enemyColor = (strcmp(enemy->name, "XÃOPAI") == 0) ? CLR(ANSI_BMAGENTA) : CLR(ANSI_BRED);
+        printf("%s+--------------------------------------------+%s\n", CLR(ANSI_CYAN), CLR(ANSI_RESET));
+        printf("%s|%s - %s%s%s\n", CLR(ANSI_CYAN), CLR(ANSI_RESET), enemyColor, enemy->name, CLR(ANSI_RESET));
+        printf("%s|%s   Saúde:  ", CLR(ANSI_CYAN), CLR(ANSI_RESET));
         printHpBar(enemy->hp, enemy->maxHp);
-        printf("|   Ataque: %i\n", enemy->atk);
-        printf("|   Defesa: %i\n", enemy->def);
+        printf("%s|%s   Ataque: %i\n", CLR(ANSI_CYAN), CLR(ANSI_RESET), enemy->atk);
+        printf("%s|%s   Defesa: %i\n", CLR(ANSI_CYAN), CLR(ANSI_RESET), enemy->def);
     }
-    printf("+--------------------------------------------+\n\n");
+    printf("%s+--------------------------------------------+%s\n\n", CLR(ANSI_CYAN), CLR(ANSI_RESET));
 }
 
 void printsXaopai() {
@@ -471,6 +620,7 @@ void printsXaopai() {
             eye = '0';
             break;
     }
+    printf("%s", CLR(ANSI_BMAGENTA));
     printf("                            .-.\n");
     printf("       ___,---.__          / | \\          __,---,___\n");
     printf("    ,-'    \\\\    `-.____,-'  |  `-.____,-'    //    `-.\n");
@@ -478,7 +628,7 @@ void printsXaopai() {
     printf(" /      ___//              `. .'              \\\\___      \\\n");
     printf("|    ,-'   `-.__             |             __,-'   `-.    |\n");
     printf("\\   |          \\ \\`-.___ \\   |   / ___,-'/ /          |   /\n");
-    printf(" \\  \\           | `._  %c`\\\\  |  //'%c  _,' |           /  /\n", eye, eye);
+    printf(" \\  \\           | `._  %s%c%s`\\\\  |  //'%s%c%s  _,' |           /  /\n", CLR(ANSI_BRED), eye, CLR(ANSI_BMAGENTA), CLR(ANSI_BRED), eye, CLR(ANSI_BMAGENTA));
     printf("  `-.\\         /'  _ `---'' . . ``---' _  `\\         /,-'\n");
     printf("     ``       /     \\    .='/ \\`=.    /     \\       ''\n");
     printf("             |__   /|\\_.--.--.--.--._/|\\   __|\n");
@@ -486,10 +636,11 @@ void printsXaopai() {
     printf("            /   /     ||\\-+--|--+-/||     \\   \\\n");
     printf("           |   |     /'\\_\\_\\ | /_/_/'\\     |   |\n");
     printf("            \\   \\__, \\_     '~'     _/ .__/   /\n");
-    printf("             `-._,-'   `-._______.-'   `-._,-'\n\n");
+    printf("             `-._,-'   `-._______.-'   `-._,-'%s\n\n", CLR(ANSI_RESET));
 }
 
 void printsAmulet() {
+    printf("%s", CLR(ANSI_BRED));
     printf("       .....           .....\n");
     printf("   ,ad8PPPP88b,     ,d88PPPP8ba,\n");
     printf("  d8P'      'Y8b, ,d8P'      'Y8b\n");
@@ -497,7 +648,7 @@ void printsAmulet() {
     printf(" 8(              '              )8\n");
     printf(" I8                             8I\n");
     printf("  Yb,           o_o           ,dP\n");
-    printf("   '8a,  ~me deixa entrar~  ,a8'\n");
+    printf("   '8a,  %s~me deixa entrar~%s  ,a8'\n", CLR(ANSI_GRAY), CLR(ANSI_BRED));
     printf("     '8a,                 ,a8'\n");
     printf("       'Yba             adP'\n");
     printf("         `Y8a         a8P'\n");
@@ -505,7 +656,7 @@ void printsAmulet() {
     printf("             '8b   d8'\n");
     printf("              '8b d8'\n");
     printf("               `888'\n");
-    printf("                 '\n");
+    printf("                 '%s\n", CLR(ANSI_RESET));
 }
 
 // ================= [ COMBAT SYSTEM ] ======================================== //
@@ -553,17 +704,18 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
     gs->monsters[monsterCode].hp = gs->monsters[monsterCode].maxHp;
 
     if (isElite) {
-        printf("> Você encontrou um monstro ELITE: %s!\n", gs->monsters[monsterCode].name);
-        printf("> Uma poderosa aura intimidadora emana da criatura...\n\n");
+        printf("> Você encontrou um monstro %sELITE%s: %s%s%s!\n", 
+               CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), gs->monsters[monsterCode].name, CLR(ANSI_RESET));
+        printf("> %sUma poderosa aura intimidadora emana da criatura...%s\n\n", CLR(ANSI_MAGENTA), CLR(ANSI_RESET));
     } else {
-        printf("> Você encontrou %s!\n\n", gs->monsters[monsterCode].name);
+        printf("> Você encontrou %s%s%s!\n\n", CLR(ANSI_BRED), gs->monsters[monsterCode].name, CLR(ANSI_RESET));
     }
     
     do {
-        printf("[1] Atacar\n");
-        printf("[2] Fugir\n");
+        printf("%s[1]%s Atacar\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+        printf("%s[2]%s Fugir\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
         if (gs->hero.potions > 0) {
-            printf("[3] Usar poção de cura (x%i)\n", gs->hero.potions);
+            printf("%s[3]%s Usar poção de cura %s(x%i)%s\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
         }
         int action = readInt();
 
@@ -575,9 +727,9 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
             int monsterMinDef = (gs->monsters[monsterCode].def * 85 + 50) / 100;
             if (gs->monsters[monsterCode].def > 0 && heroMaxAtk <= monsterMinDef) {
                 clearScreen();
-                printf("VOCÊ MORREU DE PARADA CARDÍACA AO VER %s NO PISO %i\n\a", 
-                        gs->monsters[monsterCode].name, gs->currentFloor);
-                printf("Pontuação: %i\n", gs->score);
+                printf("%sVOCÊ MORREU DE PARADA CARDÍACA AO VER %s NO PISO %i%s\n\a", 
+                        CLR(ANSI_BRED), gs->monsters[monsterCode].name, gs->currentFloor, CLR(ANSI_RESET));
+                printf("Pontuação: %s%i%s\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
                 return true;
             }
 
@@ -586,17 +738,17 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
             int heroDamage = rolledHeroAtk - rolledMonsterDef;
 
             if (heroDamage <= 0) {
-                printf("\n> Você atacou com %s, mas %s bloqueou o golpe!\n", 
-                       gs->hero.atkItem, gs->monsters[monsterCode].name);
+                printf("\n> Você atacou com %s, mas %s %sbloqueou o golpe%s!\n", 
+                       gs->hero.atkItem, gs->monsters[monsterCode].name, CLR(ANSI_BRED), CLR(ANSI_RESET));
             } else {
                 bool isCrit = (rand() % 10 == 0);
                 if (isCrit) {
                     heroDamage = (heroDamage * 3 + 1) / 2;
-                    printf("\n> GOLPE CRÍTICO! Você atacou com %s causando %i de dano!\n", 
-                           gs->hero.atkItem, heroDamage);
+                    printf("\n> %sGOLPE CRÍTICO%s! Você atacou com %s causando %s%i de dano%s!\n", 
+                           CLR(ANSI_BGREEN), CLR(ANSI_RESET), gs->hero.atkItem, CLR(ANSI_BGREEN), heroDamage, CLR(ANSI_RESET));
                 } else {
-                    printf("\n> Você atacou com %s causando %i de dano!\n", 
-                           gs->hero.atkItem, heroDamage);
+                    printf("\n> Você atacou com %s causando %s%i de dano%s!\n", 
+                           gs->hero.atkItem, CLR(ANSI_BGREEN), heroDamage, CLR(ANSI_RESET));
                 }
                 gs->monsters[monsterCode].hp -= heroDamage;
             }
@@ -608,18 +760,18 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
                 int monsterDamage = rolledMonsterAtk - rolledHeroDef;
 
                 if (monsterDamage <= 0) {
-                    printf("> %s te atacou, mas seu escudo bloqueou o golpe!\n\n", 
-                           gs->monsters[monsterCode].name);
+                    printf("> %s te atacou, mas %sseu escudo bloqueou o golpe%s!\n\n", 
+                           gs->monsters[monsterCode].name, CLR(ANSI_BGREEN), CLR(ANSI_RESET));
                 } else {
                     gs->hero.hp -= monsterDamage;
-                    printf("> %s te atacou causando %i de dano!\n\n", 
-                           gs->monsters[monsterCode].name, monsterDamage);
+                    printf("> %s te atacou causando %s%i de dano%s!\n\n", 
+                           gs->monsters[monsterCode].name, CLR(ANSI_BRED), monsterDamage, CLR(ANSI_RESET));
                 }
                 
                 if (gs->hero.hp <= 0) {
                     clearScreen();
-                    printf("VOCÊ MORREU PARA %s NO PISO %i\n\a", gs->monsters[monsterCode].name, gs->currentFloor);
-                    printf("Pontuação: %i\n", gs->score);
+                    printf("%sVOCÊ MORREU PARA %s NO PISO %i%s\n\a", CLR(ANSI_BRED), gs->monsters[monsterCode].name, gs->currentFloor, CLR(ANSI_RESET));
+                    printf("Pontuação: %s%i%s\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
                     return true;
                 }
             }
@@ -631,19 +783,19 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
             int monsterDamage = rolledMonsterAtk - rolledHeroDef;
 
             if (monsterDamage <= 0) {
-                printf("> %s tentou te atacar pelas costas, mas seu escudo bloqueou o golpe!\n", 
-                       gs->monsters[monsterCode].name);
+                printf("> %s tentou te atacar pelas costas, mas %sseu escudo bloqueou o golpe%s!\n", 
+                       gs->monsters[monsterCode].name, CLR(ANSI_BGREEN), CLR(ANSI_RESET));
             } else {
                 gs->hero.hp -= monsterDamage;
-                printf("> %s te atingiu pelas costas causando %i de dano!\n", 
-                       gs->monsters[monsterCode].name, monsterDamage);
+                printf("> %s te atingiu pelas costas causando %s%i de dano%s!\n", 
+                       gs->monsters[monsterCode].name, CLR(ANSI_BRED), monsterDamage, CLR(ANSI_RESET));
             }
             
             if (gs->hero.hp <= 0) {
                 clearScreen();
-                printf("VOCÊ MORREU PARA %s TENTANDO FUGIR NO PISO %i\n\a", 
-                       gs->monsters[monsterCode].name, gs->currentFloor);
-                printf("Pontuação: %i\n", gs->score);
+                printf("%sVOCÊ MORREU PARA %s TENTANDO FUGIR NO PISO %i%s\n\a", 
+                       CLR(ANSI_BRED), gs->monsters[monsterCode].name, gs->currentFloor, CLR(ANSI_RESET));
+                printf("Pontuação: %s%i%s\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
                 return true;
             }
 
@@ -651,9 +803,9 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
             return false;
         } else if (action == 3) {
             if (gs->hero.potions <= 0) {
-                printf("\n> Você não tem poções de cura guardadas!\n\n");
+                printf("\n> %sVocê não tem poções de cura guardadas!%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
             } else if (gs->hero.hp >= gs->hero.maxHp) {
-                printf("\n> Sua saúde já está no máximo!\n\n");
+                printf("\n> %sSua saúde já está no máximo!%s\n\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
             } else {
                 gs->hero.potions--;
                 int heal = gs->hero.maxHp / 2;
@@ -661,11 +813,11 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
                     heal = gs->hero.maxHp - gs->hero.hp;
                 }
                 gs->hero.hp += heal;
-                printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", 
-                       heal, gs->hero.potions);
+                printf("\n> Você bebeu uma poção de cura e recuperou %s%i de vida%s! %s(Restam: %i)%s\n\n", 
+                       CLR(ANSI_BGREEN), heal, CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
             }
         } else {
-            printf("> Comando não encontrado.\n\n");
+            printf("> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
         }
     } while (gs->monsters[monsterCode].hp > 0);
 
@@ -673,19 +825,20 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
         int eliteCoins = (gs->monsters[monsterCode].coins * 15 + 5) / 10;
         gs->score += 250;
         gs->hero.coins += eliteCoins;
-        printf("> Você derrotou %s!\n> Você encontrou %i moedas!\n", 
-               gs->monsters[monsterCode].name, eliteCoins);
+        printf("> Você derrotou %s%s%s!\n> Você encontrou %s%i moedas%s!\n", 
+               CLR(ANSI_BRED), gs->monsters[monsterCode].name, CLR(ANSI_RESET), CLR(ANSI_BYELLOW), eliteCoins, CLR(ANSI_RESET));
         if (rand() % 10 < 4) {
             gs->hero.potions++;
-            printf("> O monstro elite derrubou uma poção de cura! (Você tem %i)\n\n", gs->hero.potions);
+            printf("> O monstro elite derrubou uma %spoção de cura%s! %s(Você tem %i)%s\n\n", 
+                   CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
         } else {
             printf("\n");
         }
     } else {
         gs->score += 100;
         gs->hero.coins += gs->monsters[monsterCode].coins;
-        printf("> Você derrotou %s!\n> Você encontrou %i moedas!\n\n", 
-               gs->monsters[monsterCode].name, gs->monsters[monsterCode].coins);
+        printf("> Você derrotou %s%s%s!\n> Você encontrou %s%i moedas%s!\n\n", 
+               CLR(ANSI_BRED), gs->monsters[monsterCode].name, CLR(ANSI_RESET), CLR(ANSI_BYELLOW), gs->monsters[monsterCode].coins, CLR(ANSI_RESET));
     }
     
     return false;
@@ -694,27 +847,27 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
 // ================= [ EVENTS & SHOPS ] ====================================== //
 
 void printShopBox(GameState *gs, int shopCode, bool item1Available, bool item2Available) {
-    printf("+----------------- [ LOJA ] -----------------+\n");
-    printf("|   Moedas: %i\n", gs->hero.coins);
-    printf("+--------------------------------------------+\n");
-    printf("|   [1] Sair da loja\n");
+    printf("%s+----------------- [ %sLOJA%s%s ] -----------------+%s\n", CLR(ANSI_YELLOW), CLR(ANSI_BYELLOW), CLR(ANSI_RESET), CLR(ANSI_YELLOW), CLR(ANSI_RESET));
+    printf("%s|%s   Moedas: %s%i%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BYELLOW), gs->hero.coins, CLR(ANSI_RESET));
+    printf("%s+--------------------------------------------+%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET));
+    printf("%s|%s   %s[1]%s Sair da loja\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET));
     if (item1Available) {
-        printf("|   [2] %s - $%i\n", gs->shops[shopCode].item1Name, gs->shops[shopCode].item1Price);
+        printf("%s|%s   %s[2]%s %s - %s$%i%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), gs->shops[shopCode].item1Name, CLR(ANSI_BYELLOW), gs->shops[shopCode].item1Price, CLR(ANSI_RESET));
     } else {
-        printf("|   [2] %s - (Comprado)\n", gs->shops[shopCode].item1Name);
+        printf("%s|%s   %s[2]%s %s%s - (Comprado)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->shops[shopCode].item1Name, CLR(ANSI_RESET));
     }
     if (item2Available) {
-        printf("|   [3] %s - $%i\n", gs->shops[shopCode].item2Name, gs->shops[shopCode].item2Price);
+        printf("%s|%s   %s[3]%s %s - %s$%i%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), gs->shops[shopCode].item2Name, CLR(ANSI_BYELLOW), gs->shops[shopCode].item2Price, CLR(ANSI_RESET));
     } else {
-        printf("|   [3] %s - (Comprado)\n", gs->shops[shopCode].item2Name);
+        printf("%s|%s   %s[3]%s %s%s - (Comprado)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->shops[shopCode].item2Name, CLR(ANSI_RESET));
     }
     if (gs->currentFloor >= 1)
-        printf("|   [4] Poção de cura - $50\n");
+        printf("%s|%s   %s[4]%s Poção de cura - %s$50%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
     if (gs->currentFloor >= 2)
-        printf("|   [5] Pingente de vida - $100\n");
+        printf("%s|%s   %s[5]%s Pingente de vida - %s$100%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
     if (gs->hero.potions > 0)
-        printf("|   [6] Beber poção de cura (x%i)\n", gs->hero.potions);
-    printf("+--------------------------------------------+\n\n");
+        printf("%s|%s   %s[6]%s Beber poção de cura %s(x%i)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
+    printf("%s+--------------------------------------------+%s\n\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET));
 }
 
 void shopInteraction(GameState *gs, int shopCode) {
@@ -740,13 +893,13 @@ void shopInteraction(GameState *gs, int shopCode) {
             case 2: // BUYS ITEM 1
                 if ((item1Available == true) && (gs->hero.coins >= gs->shops[shopCode].item1Price)) {
                     strcpy(gs->hero.atkItem, gs->shops[shopCode].item1Name);
-                    printf("\n> Você comprou %s.\n\n", gs->shops[shopCode].item1Name);
+                    printf("\n> Você comprou %s%s%s.\n\n", CLR(ANSI_BGREEN), gs->shops[shopCode].item1Name, CLR(ANSI_RESET));
                     gs->hero.atk = gs->shops[shopCode].item1atkPoints;
                     item1Available = false;
                     gs->hero.coins -= gs->shops[shopCode].item1Price;
                     gs->score += gs->shops[shopCode].item1Price / 2;
                 } else {
-                    printf("\n> Impossível realizar a ação.\n\n");
+                    printf("\n> %sImpossível realizar a ação.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 }
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
@@ -756,13 +909,13 @@ void shopInteraction(GameState *gs, int shopCode) {
             case 3: // BUYS ITEM 2
                 if ((item2Available == true) && (gs->hero.coins >= gs->shops[shopCode].item2Price)) {
                     strcpy(gs->hero.defItem, gs->shops[shopCode].item2Name);
-                    printf("\n> Você comprou %s.\n\n", gs->shops[shopCode].item2Name);
+                    printf("\n> Você comprou %s%s%s.\n\n", CLR(ANSI_BGREEN), gs->shops[shopCode].item2Name, CLR(ANSI_RESET));
                     gs->hero.def = gs->shops[shopCode].item2defPoints;
                     item2Available = false;
                     gs->hero.coins -= gs->shops[shopCode].item2Price;
                     gs->score += gs->shops[shopCode].item2Price / 2;
                 } else {
-                    printf("\n> Impossível realizar a ação.\n\n");
+                    printf("\n> %sImpossível realizar a ação.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 }
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
@@ -774,11 +927,11 @@ void shopInteraction(GameState *gs, int shopCode) {
                     gs->hero.potions++;
                     gs->hero.coins -= 50;
                     gs->score += 20;
-                    printf("\n> Você comprou uma poção de cura. (Você tem %i)\n\n", gs->hero.potions);
+                    printf("\n> Você comprou uma %spoção de cura%s. %s(Você tem %i)%s\n\n", CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
                 } else if (gs->currentFloor >= 1) {
-                    printf("\n> Impossível realizar a ação.\n\n");
+                    printf("\n> %sImpossível realizar a ação.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 } else {
-                    printf("\n> Comando não encontrado.\n\n");
+                    printf("\n> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 }
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
@@ -791,11 +944,12 @@ void shopInteraction(GameState *gs, int shopCode) {
                     gs->hero.maxHp += 50;
                     gs->hero.hp += 50;
                     gs->score += 150;
-                    printf("\n> Você comprou o pingente de vida! Você ganhou +50 de vida máxima! Saúde: %i/%i\n\n", gs->hero.hp, gs->hero.maxHp);
+                    printf("\n> Você comprou o %spingente de vida%s! Você ganhou %s+50 de vida máxima%s! Saúde: %s%i/%i%s\n\n", 
+                           CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_BGREEN), gs->hero.hp, gs->hero.maxHp, CLR(ANSI_RESET));
                 } else if (gs->currentFloor >= 2) {
-                    printf("\n> Impossível realizar a ação.\n\n");
+                    printf("\n> %sImpossível realizar a ação.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 } else {
-                    printf("\n> Comando não encontrado.\n\n");
+                    printf("\n> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 }
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
@@ -808,11 +962,12 @@ void shopInteraction(GameState *gs, int shopCode) {
                     int heal = gs->hero.maxHp / 2;
                     if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                     gs->hero.hp += heal;
-                    printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! Saúde: %i/%i\n\n", heal, gs->hero.hp, gs->hero.maxHp);
+                    printf("\n> Você bebeu uma poção de cura e recuperou %s%i de vida%s! Saúde: %s%i/%i%s\n\n", 
+                           CLR(ANSI_BGREEN), heal, CLR(ANSI_RESET), CLR(ANSI_BGREEN), gs->hero.hp, gs->hero.maxHp, CLR(ANSI_RESET));
                 } else if (gs->hero.potions > 0 && gs->hero.hp >= gs->hero.maxHp) {
-                    printf("\n> Sua saúde já está no máximo!\n\n");
+                    printf("\n> %sSua saúde já está no máximo!%s\n\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
                 } else {
-                    printf("\n> Impossível realizar a ação.\n\n");
+                    printf("\n> %sImpossível realizar a ação.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 }
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
@@ -820,7 +975,7 @@ void shopInteraction(GameState *gs, int shopCode) {
                 break;
                 
             default:
-                printf("\n> Comando não encontrado.\n\n");
+                printf("\n> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 if (!hasPendingInput()) {
                     printShopBox(gs, shopCode, item1Available, item2Available);
                 }
@@ -842,53 +997,54 @@ int compareHighscores(const void* a, const void* b) {
 void shopDialog(GameState *gs) {
     switch (gs->currentFloor) {
         case 0:
-            printf("Lojista: Então você quer se aventurar pela terrível masmorra, %s?\n", gs->hero.name);
+            printf("%sLojista:%s Então você quer se aventurar pela terrível masmorra, %s%s%s?\n", 
+                   CLR(ANSI_BYELLOW), CLR(ANSI_RESET), CLR(ANSI_BWHITE), gs->hero.name, CLR(ANSI_RESET));
             printf("Se fosse você eu não iria de mãos atadas...\n");
             break;
 
         case 1:
             printf("> Você encontra um vendedor ambulante, carregando itens em seu carro de mão.\n");
-            printf("Vendedor ambulante: O que estou fazendo aqui? Ah, é só um passeio de negócios.\n");
+            printf("%sVendedor ambulante:%s O que estou fazendo aqui? Ah, é só um passeio de negócios.\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
             printf("Você acabou de matar potenciais compradores. Você devia cobrir meu prejuízo...\n\n");
             break;
 
         case 2:
             printf("> Você encontra uma pequena venda de um goblin morador local.\n");
-            printf("Lojista goblin: Levar o que quiser, só por favor não me matar!\n");
-            printf("(Seu código moral te impede de sair sem pagar)\n\n");
+            printf("%sLojista goblin:%s Levar o que quiser, só por favor não me matar!\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+            printf("%s(Seu código moral te impede de sair sem pagar)%s\n\n", CLR(ANSI_DIM), CLR(ANSI_RESET));
             break;
 
         case 3:
             printf("> Você encontra um troll ferreiro, forjando ferramentas com os minérios.\n");
-            printf("Ferreiro: Uai, um humano por essas banda? Trem raro de se vê...\n");
+            printf("%sFerreiro:%s Uai, um humano por essas banda? Trem raro de se vê...\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
             printf("Posso arranjá umas lembrancinha procê em troca dessas sua moeda de ouro.\n\n");
             break;
 
         case 4:
             printf("> Um misterioso ser encapuzado aparece das sombras.\n");
-            printf("Ser misterioso: Então és tu %c destemid%c %s, que ousas desafiar o temível Xãopai?\n", 
-                   gs->pronoum, gs->pronoum, gs->hero.name);
+            printf("%sSer misterioso:%s Então és tu %c destemid%c %s%s%s, que ousas desafiar o temível %sXãopai%s?\n", 
+                   CLR(ANSI_BYELLOW), CLR(ANSI_RESET), gs->pronoum, gs->pronoum, CLR(ANSI_BWHITE), gs->hero.name, CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
             printf("Acautela-te, jovem guerreir%c, pois o percurso adiante é sombrio e traiçoeiro.\n\n", 
                    gs->pronoum);
             break;
 
         case 5:
             printf("> Você encontra uma hedionda figura de carne e tentáculos.\n");
-            printf("Criatura: (A criatura encara os mais obscuros cantos da sua alma)\n");
-            printf("(Você se sente extremamente desconfortável enquanto compra)\n\n");
+            printf("%sCriatura:%s %s(A criatura encara os mais obscuros cantos da sua alma)%s\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET), CLR(ANSI_DIM), CLR(ANSI_RESET));
+            printf("%s(Você se sente extremamente desconfortável enquanto compra)%s\n\n", CLR(ANSI_DIM), CLR(ANSI_RESET));
             break;
     }
 }
 
 void dungeonDialog(GameState *gs) {
-    printf("\n================================================================================\n");
+    printf("\n%s================================================================================\n", CLR_ORANGE());
     switch (gs->currentFloor) {
         case 0:
             printf("                                   [ CIDADE ]                                   \n");
             printf("================================================================================\n\n");
             printf("  Diversos aventureiros da cidade acima adentraram a masmorra antes de você,\n");
             printf("  mas poucos foram vistos novamente. Diz-se que um mal ancestral espreita nas\n");
-            printf("  profundezas, o imensamente poderoso espírito Xãopai.\n");
+            printf("  profundezas, o imensamente poderoso espírito %sXãopai%s%s.\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR_ORANGE());
             break;
 
         case 1:
@@ -934,43 +1090,43 @@ void dungeonDialog(GameState *gs) {
             printf("                               [ TEMPLO DE XÃOPAI ]                             \n");
             printf("================================================================================\n\n");
             printf("  Você desce as escadarias da masmorra, chegando finalmente ao trono do todo\n");
-            printf("  poderoso Xãopai. Você sente como se fosse passar por uns maus tempos.\n");
+            printf("  poderoso %sXãopai%s%s. Você sente como se fosse passar por uns maus tempos.\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR_ORANGE());
             break;
     }
-    printf("\n================================================================================\n\n");
+    printf("\n================================================================================%s\n\n", CLR(ANSI_RESET));
 }
 
 void printsBadEnding(GameState *gs) {
     printf("> Você toma o amuleto para si.\n");
     printf("> Você absorve o poder do amuleto, e consegue sentir a escuridão fluir pelo seu corpo.\n");
     printf("> Você tenta resistir à magia, mas ela te domina e você acaba perdendo sua noção \nda realidade.\n");
-    printf("> O que restou de você agora reinará no trono como %c nov%c Xãopai.\n", gs->pronoum, gs->pronoum);
-    printf("|FINAL RUIM|\n");
+    printf("> O que restou de você agora reinará no trono como %c nov%c %sXãopai%s.\n", gs->pronoum, gs->pronoum, CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
+    printf("%s|FINAL RUIM|%s\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
 }
 
 void printsGoodEnding() {
     printf("> Você destrói o amuleto.\n");
     printf("> Você ouve um estridente ruído vindo do amuleto enquanto vê toda a energia maligna \nse dissipar no ar.\n");
     printf("> Você finalmente libertou a masmorra e os habitantes da cidade das \nmãos do mal!\n");
-    printf("|FINAL BOM|\n");
+    printf("%s|FINAL BOM|%s\n", CLR(ANSI_BGREEN), CLR(ANSI_RESET));
 }
 
 void printsTrueEnding(GameState *gs) {
     printf("> Você recita a sequência mágica ao amuleto.\n");
     printf("> O amuleto brilha em luz vermelha ofuscante enquanto muda sua forma para um esbelto garoto.\n");
-    printf("> Paixão: Uh... Onde eu estou? Eu estava programando um jogo e... acho que dormi no teclado.\n");
-    printf("> Paixão: Vem, %s, vamo dar um fora daqui. Ficar encarando essa tela de terminal \ntá me dando dor de cabeça...\n", gs->hero.name);
-    printf("|FINAL VERDADEIRO|\n");
+    printf("> %sPaixão:%s Uh... Onde eu estou? Eu estava programando um jogo e... acho que dormi no teclado.\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+    printf("> %sPaixão:%s Vem, %s%s%s, vamo dar um fora daqui. Ficar encarando essa tela de terminal \ntá me dando dor de cabeça...\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BWHITE), gs->hero.name, CLR(ANSI_RESET));
+    printf("%s|FINAL VERDADEIRO|%s\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
 }
 
 void printsCowardEnding(GameState *gs) {
-    printf("\n> Por um milagre do destino, você encontra uma brecha e consegue escapar de XÃOPAI!\n");
+    printf("\n> Por um milagre do destino, você encontra uma brecha e consegue escapar de %sXÃOPAI%s!\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
     printf("> Você corre desesperadamente escadaria acima sem olhar para trás, abandonando a masmorra.\n");
     printf("> A cidade acima eventualmente sucumbe à escuridão, mas pelo menos você salvou a própria pele...\n");
-    printf("> Você sobreviveu, mas será para sempre lembrad%c como %c maior covarde da história, %s.\n", 
-           gs->pronoum, gs->pronoum, gs->hero.name);
-    printf("|FINAL COVARDE|\n");
-    printf("Pontuação: %i\n\n", gs->score);
+    printf("> Você sobreviveu, mas será para sempre lembrad%c como %c maior covarde da história, %s%s%s.\n", 
+           gs->pronoum, gs->pronoum, CLR(ANSI_BWHITE), gs->hero.name, CLR(ANSI_RESET));
+    printf("%s|FINAL COVARDE|%s\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+    printf("Pontuação: %s%i%s\n\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
 }
 
 // ================= [ COMBAT & EVENT FUNCTIONS ] ============================== //
@@ -1000,9 +1156,9 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
     mimic.hp = mimic.maxHp;
     mimic.coins = rand() % (50 * gs->currentFloor) + 50;
 
-    printf("> Você encontrou um baú!\n");
-    printf("[1] Chutar violentamente\n");
-    printf("[2] Ignorar\n");
+    printf("> Você encontrou um %sbaú%s!\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+    printf("%s[1]%s Chutar violentamente\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+    printf("%s[2]%s Ignorar\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
 
     int action;
     do {
@@ -1010,8 +1166,8 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
         switch(action) {
             case 0:
                 showsInfo(gs, NULL);
-                printf("|Baú|\n");
-                printf(" ???\n\n");
+                printf("%s|Baú|%s\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+                printf(" %s???%s\n\n", CLR(ANSI_DIM), CLR(ANSI_RESET));
                 break;
 
             case 1:
@@ -1022,19 +1178,19 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
                 return false;
 
             default:
-                printf("> Comando não encontrado.\n\n");
+                printf("> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 break;
         }
     } while(action != 1);
 
-    printf("\n> O Baú era um mímico!\n\n");
+    printf("\n> O Baú era um %smímico%s!\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
 
     bool fled = false;
     do {
-        printf("[1] Atacar\n");
-        printf("[2] Fugir\n");
+        printf("%s[1]%s Atacar\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+        printf("%s[2]%s Fugir\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
         if (gs->hero.potions > 0)
-            printf("[3] Usar poção de cura (x%i)\n", gs->hero.potions);
+            printf("%s[3]%s Usar poção de cura %s(x%i)%s\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
         action = readInt();
         switch(action) {
             case 0:
@@ -1046,14 +1202,15 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
                 int heroDamage = rolledHeroAtk - rolledMimicDef;
 
                 if (heroDamage <= 0) {
-                    printf("\n> Você atacou o %s, mas ele repeliu seu golpe!\n", mimic.name);
+                    printf("\n> Você atacou o %s, mas ele %srepeliu seu golpe%s!\n", mimic.name, CLR(ANSI_BRED), CLR(ANSI_RESET));
                 } else {
                     bool isCrit = (rand() % 10 == 0);
                     if (isCrit) {
                         heroDamage = (heroDamage * 3 + 1) / 2;
-                        printf("\n> GOLPE CRÍTICO! Você atacou o %s causando %i de dano!\n", mimic.name, heroDamage);
+                        printf("\n> %sGOLPE CRÍTICO%s! Você atacou o %s causando %s%i de dano%s!\n", 
+                               CLR(ANSI_BGREEN), CLR(ANSI_RESET), mimic.name, CLR(ANSI_BGREEN), heroDamage, CLR(ANSI_RESET));
                     } else {
-                        printf("\n> Você atacou o %s causando %i de dano!\n", mimic.name, heroDamage);
+                        printf("\n> Você atacou o %s causando %s%i de dano%s!\n", mimic.name, CLR(ANSI_BGREEN), heroDamage, CLR(ANSI_RESET));
                     }
                     mimic.hp -= heroDamage;
                 }
@@ -1064,15 +1221,15 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
                     int mimicDamage = rolledMimicAtk - rolledHeroDef;
 
                     if (mimicDamage <= 0) {
-                        printf("> %s tentou te morder, mas sua defesa bloqueou!\n\n", mimic.name);
+                        printf("> %s tentou te morder, mas %ssua defesa bloqueou%s!\n\n", mimic.name, CLR(ANSI_BGREEN), CLR(ANSI_RESET));
                     } else {
                         gs->hero.hp -= mimicDamage;
-                        printf("> %s te mordeu causando %i de dano!\n\n", mimic.name, mimicDamage);
+                        printf("> %s te mordeu causando %s%i de dano%s!\n\n", mimic.name, CLR(ANSI_BRED), mimicDamage, CLR(ANSI_RESET));
                     }
                     if (gs->hero.hp <= 0) {
                         clearScreen();
-                        printf("VOCÊ MORREU PARA %s NO PISO %i\n\a", mimic.name, gs->currentFloor);
-                        printf("Pontuação: %i\n", gs->score);
+                        printf("%sVOCÊ MORREU PARA %s NO PISO %i%s\n\a", CLR(ANSI_BRED), mimic.name, gs->currentFloor, CLR(ANSI_RESET));
+                        printf("Pontuação: %s%i%s\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
                         return true;
                     }
                 }
@@ -1085,15 +1242,15 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
                 int mimicDamage = rolledMimicAtk - rolledHeroDef;
 
                 if (mimicDamage <= 0) {
-                    printf("> %s tentou te morder pelas costas, mas você conseguiu se esquivar!\n", mimic.name);
+                    printf("> %s tentou te morder pelas costas, mas %svocê conseguiu se esquivar%s!\n", mimic.name, CLR(ANSI_BGREEN), CLR(ANSI_RESET));
                 } else {
                     gs->hero.hp -= mimicDamage;
-                    printf("> %s te mordeu pelas costas causando %i de dano!\n", mimic.name, mimicDamage);
+                    printf("> %s te mordeu pelas costas causando %s%i de dano%s!\n", mimic.name, CLR(ANSI_BRED), mimicDamage, CLR(ANSI_RESET));
                 }
                 if (gs->hero.hp <= 0) {
                     clearScreen();
-                    printf("VOCÊ MORREU PARA %s TENTANDO FUGIR NO PISO %i\n\a", mimic.name, gs->currentFloor);
-                    printf("Pontuação: %i\n", gs->score);
+                    printf("%sVOCÊ MORREU PARA %s TENTANDO FUGIR NO PISO %i%s\n\a", CLR(ANSI_BRED), mimic.name, gs->currentFloor, CLR(ANSI_RESET));
+                    printf("Pontuação: %s%i%s\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
                     return true;
                 }
                 printf("> Você conseguiu escapar com vida pelos corredores!\n\n");
@@ -1103,19 +1260,20 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
             }
             case 3:
                 if (gs->hero.potions <= 0) {
-                    printf("\n> Você não tem poções de cura guardadas!\n\n");
+                    printf("\n> %sVocê não tem poções de cura guardadas!%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 } else if (gs->hero.hp >= gs->hero.maxHp) {
-                    printf("\n> Sua saúde já está no máximo!\n\n");
+                    printf("\n> %sSua saúde já está no máximo!%s\n\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
                 } else {
                     gs->hero.potions--;
                     int heal = gs->hero.maxHp / 2;
                     if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                     gs->hero.hp += heal;
-                    printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", heal, gs->hero.potions);
+                    printf("\n> Você bebeu uma poção de cura e recuperou %s%i de vida%s! %s(Restam: %i)%s\n\n", 
+                           CLR(ANSI_BGREEN), heal, CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
                 }
                 break;
             default:
-                printf("> Comando não encontrado.\n\n");
+                printf("> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 break;
         }
     } while(mimic.hp > 0);
@@ -1123,12 +1281,12 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
     if (!fled) {
         gs->score += mimic.coins;
         gs->hero.coins += mimic.coins;
-        printf("> Você derrotou o %s!\n", mimic.name);
-        printf("> Você encontrou %d moedas!\n\n", mimic.coins);
+        printf("> Você derrotou o %s%s%s!\n", CLR(ANSI_BRED), mimic.name, CLR(ANSI_RESET));
+        printf("> Você encontrou %s%d moedas%s!\n\n", CLR(ANSI_BYELLOW), mimic.coins, CLR(ANSI_RESET));
 
         if (*chestOpened == false) {
             gs->secretNumber = rand() % 900 + 100;
-            printf("> Você encontra uma marcação suspeita gravada no fundo do baú: %i\n\n", gs->secretNumber);
+            printf("> Você encontra uma marcação suspeita gravada no fundo do baú: %s%i%s\n\n", CLR(ANSI_BMAGENTA), gs->secretNumber, CLR(ANSI_RESET));
             *chestOpened = true;
         }
     }
@@ -1137,14 +1295,14 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
 }
 
 bool xaopaiInteraction(GameState *gs) {
-    printf("> Você desafia o terrível Xãopai!\n\n");
+    printf("> Você desafia o terrível %sXãopai%s!\n\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
     gs->monsters[XAOPAI].hp = gs->monsters[XAOPAI].maxHp;
     
     do {
-        printf("[1] Atacar\n");
-        printf("[2] Fugir\n");
+        printf("%s[1]%s Atacar\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+        printf("%s[2]%s Fugir\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
         if (gs->hero.potions > 0)
-            printf("[3] Usar poção de cura (x%i)\n", gs->hero.potions);
+            printf("%s[3]%s Usar poção de cura %s(x%i)%s\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
         int action = readInt();
         switch(action) {
             case 0: // INFO
@@ -1156,22 +1314,22 @@ bool xaopaiInteraction(GameState *gs) {
                 bool isCrit = (rand() % 10 == 0);
                 if (isCrit) {
                     heroDamage = (heroDamage * 3 + 1) / 2;
-                    printf("\n> GOLPE CRÍTICO! Você atacou XÃOPAI com %s causando %i de dano!\n", 
-                           gs->hero.atkItem, heroDamage);
+                    printf("\n> %sGOLPE CRÍTICO%s! Você atacou %sXÃOPAI%s com %s causando %s%i de dano%s!\n", 
+                           CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), gs->hero.atkItem, CLR(ANSI_BGREEN), heroDamage, CLR(ANSI_RESET));
                 } else {
-                    printf("\n> Você atacou XÃOPAI com %s causando %i de dano!\n", 
-                           gs->hero.atkItem, heroDamage);
+                    printf("\n> Você atacou %sXÃOPAI%s com %s causando %s%i de dano%s!\n", 
+                           CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), gs->hero.atkItem, CLR(ANSI_BGREEN), heroDamage, CLR(ANSI_RESET));
                 }
                 gs->monsters[XAOPAI].hp -= heroDamage;
                 if (gs->monsters[XAOPAI].hp > 0) {
                     int xaopaiDamage = rollStat(gs->monsters[XAOPAI].atk);
                     gs->hero.hp -= xaopaiDamage;
-                    printf("> XÃOPAI revidou com poder sombrio causando %i de dano!\n\n", 
-                           xaopaiDamage);
+                    printf("> %sXÃOPAI%s revidou com poder sombrio causando %s%i de dano%s!\n\n", 
+                           CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), xaopaiDamage, CLR(ANSI_RESET));
                     if (gs->hero.hp <= 0) {
                         clearScreen();
-                        printf("VOCÊ PERECEU DIANTE DE XÃOPAI.\n\a");
-                        printf("Pontuação: %i\n", gs->score);
+                        printf("%sVOCÊ PERECEU DIANTE DE %sXÃOPAI%s.%s\n\a", CLR(ANSI_BRED), CLR(ANSI_BMAGENTA), CLR(ANSI_BRED), CLR(ANSI_RESET));
+                        printf("Pontuação: %s%i%s\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
                         return true;
                     }
                 }
@@ -1183,14 +1341,14 @@ bool xaopaiInteraction(GameState *gs) {
                     gs->fledXaopai = true;
                     return false;
                 }
-                printf("\n> Não há como fugir do poder avassalador de XÃOPAI!\n");
+                printf("\n> %sNão há como fugir do poder avassalador de XÃOPAI!%s\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
                 int xaopaiDamage = rollStat(gs->monsters[XAOPAI].atk);
                 gs->hero.hp -= xaopaiDamage;
-                printf("> XÃOPAI te pune pela covardia causando %i de dano!\n\n", xaopaiDamage);
+                printf("> %sXÃOPAI%s te pune pela covardia causando %s%i de dano%s!\n\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), xaopaiDamage, CLR(ANSI_RESET));
                 if (gs->hero.hp <= 0) {
                     clearScreen();
-                    printf("VOCÊ PERECEU TENTANDO FUGIR DE XÃOPAI.\n\a");
-                    printf("Pontuação: %i\n", gs->score);
+                    printf("%sVOCÊ PERECEU TENTANDO FUGIR DE %sXÃOPAI%s.%s\n\a", CLR(ANSI_BRED), CLR(ANSI_BMAGENTA), CLR(ANSI_BRED), CLR(ANSI_RESET));
+                    printf("Pontuação: %s%i%s\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
                     return true;
                 }
                 break;
@@ -1198,37 +1356,38 @@ bool xaopaiInteraction(GameState *gs) {
 
             case 3: // POTION
                 if (gs->hero.potions <= 0) {
-                    printf("\n> Você não tem poções de cura guardadas!\n\n");
+                    printf("\n> %sVocê não tem poções de cura guardadas!%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 } else if (gs->hero.hp >= gs->hero.maxHp) {
-                    printf("\n> Sua saúde já está no máximo!\n\n");
+                    printf("\n> %sSua saúde já está no máximo!%s\n\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
                 } else {
                     gs->hero.potions--;
                     int heal = gs->hero.maxHp / 2;
                     if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                     gs->hero.hp += heal;
-                    printf("\n> Você bebeu uma poção de cura e recuperou %i de vida! (Restam: %i)\n\n", heal, gs->hero.potions);
+                    printf("\n> Você bebeu uma poção de cura e recuperou %s%i de vida%s! %s(Restam: %i)%s\n\n", 
+                           CLR(ANSI_BGREEN), heal, CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
                 }
                 break;
 
             default:
-                printf("> Comando não encontrado.\n\n");
+                printf("> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 break;
         }
     } while(gs->monsters[XAOPAI].hp > 0);
 
     gs->score += 10000;
-    printf("> VOCÊ DERROTOU O ESPÍRITO DE XÃOPAI!\n\n");
+    printf("> %sVOCÊ DERROTOU O ESPÍRITO DE %sXÃOPAI%s!%s\n\n", CLR(ANSI_BGREEN), CLR(ANSI_BMAGENTA), CLR(ANSI_BGREEN), CLR(ANSI_RESET));
     return false;
 }
 
 void ending(GameState *gs) {
     printf("> Você atravessa a fera com a sua espada e ela é reduzida à poeira e cinzas.\n");
-    printf("> Você apanha um amuleto vermelho-sangue em meio aos restos da criatura\n");
+    printf("> Você apanha um %samuleto vermelho-sangue%s em meio aos restos da criatura\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
     printf("> O amuleto pulsa vigorosamente em suas mãos. Você pode sentir um imenso poder \nsaindo dele.\n");
     printf("> O que você faz?\n");
-    printf("[1] Inspecionar amuleto\n");
-    printf("[2] Se apossar do amuleto de Xãopai\n");
-    printf("[3] Destruir o amuleto de Xãopai\n");
+    printf("%s[1]%s Inspecionar amuleto\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+    printf("%s[2]%s Se apossar do amuleto de %sXãopai%s\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
+    printf("%s[3]%s Destruir o amuleto de %sXãopai%s\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
 
     while(1) {
         int action = readInt();
@@ -1253,7 +1412,7 @@ void ending(GameState *gs) {
             printf("Nada acontece...\n");
         }
     }
-    printf("Pontuação: %i\n\n", gs->score);
+    printf("Pontuação: %s%i%s\n\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
 }
 
 void updatesHighscores(GameState *gs, highscore_entry_t* highscores) {
@@ -1293,14 +1452,20 @@ void updatesHighscores(GameState *gs, highscore_entry_t* highscores) {
 int highscoresMenu(GameState *gs, highscore_entry_t* highscores) {
     int input;
     clearScreen();
-    printf("                - HIGH SCORES -                \n\n");
+    printf("                %s- HIGH SCORES -%s                \n\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
 
-    for (int i = 0; i < HIGHSCORES_NUM - 1; ++i)
-        if (highscores[i].score != 0)
-            printf("            %2i - %-18s %5i\n", i + 1, highscores[i].name, highscores[i].score);
+    for (int i = 0; i < HIGHSCORES_NUM - 1; ++i) {
+        if (highscores[i].score != 0) {
+            const char *rankColor = CLR(ANSI_DIM);
+            if (i == 0) rankColor = CLR(ANSI_BYELLOW);
+            else if (i == 1) rankColor = CLR(ANSI_BWHITE);
+            else if (i == 2) rankColor = CLR(ANSI_YELLOW);
+            printf("            %s%2i - %-18s %5i%s\n", rankColor, i + 1, highscores[i].name, highscores[i].score, CLR(ANSI_RESET));
+        }
+    }
 
-    printf("\n         (1) Jogar novamente\n");
-    printf("         (2) Sair do jogo\n");
+    printf("\n         %s(1)%s Jogar novamente\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+    printf("         %s(2)%s Sair do jogo\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
 
     do {
         input = readInt();
@@ -1315,8 +1480,8 @@ int highscoresMenu(GameState *gs, highscore_entry_t* highscores) {
                 if (tolower((unsigned char)confirm[0]) == 's' || tolower((unsigned char)confirm[0]) == 'y') {
                     return 0;
                 }
-                printf("\n         (1) Jogar novamente\n");
-                printf("         (2) Sair do jogo\n");
+                printf("\n         %s(1)%s Jogar novamente\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+                printf("         %s(2)%s Sair do jogo\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
                 break;
             }
             case 10:
@@ -1332,7 +1497,7 @@ int highscoresMenu(GameState *gs, highscore_entry_t* highscores) {
                 printf("\12\n");
                 break;
             default:
-                printf("> Comando não encontrado.\n\n");
+                printf("> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 break;
         }
     } while(input != 1);
@@ -1389,13 +1554,15 @@ void playDungeon(GameState *gs) {
 
 // ================= [ MAIN LOOP ] ============================================ //
 
-int main() {
+int main(int argc, char *argv[]) {
     setlocale(LC_ALL, ".UTF8");
 
     #ifdef _WIN32
         SetConsoleOutputCP(CP_UTF8);
         SetConsoleCP(CP_UTF8);
     #endif
+
+    initTerminalColors(argc, argv);
 
     srand((unsigned)time(NULL));
 
@@ -1427,7 +1594,7 @@ int main() {
         
         printf("\n> Antes de começar sua aventura, você entra em uma loja.\n");
         if (iterationCounter == 0) {
-            printf("Lojista: Você deve ser nov%c por aqui. Qual seu nome, viajante?\n", gs.pronoum);
+            printf("%sLojista:%s Você deve ser nov%c por aqui. Qual seu nome, viajante?\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET), gs.pronoum);
             readString(heroName, STR_LENGTH);
         }
         strcpy(gs.hero.name, heroName);
@@ -1438,15 +1605,15 @@ int main() {
             lowerName[i] = tolower(lowerName[i]);
         }
         if (strcmp(lowerName, "paixao") == 0 || strcmp(lowerName, "paixão") == 0) {
-            printf("Lojista: Olha só! O próprio criador do jogo! Bom rever você.\n");
+            printf("%sLojista:%s Olha só! O próprio criador do jogo! Bom rever você.\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
             gs.hero.coins += 9990;
         }
         
         shopDialog(&gs);
         
-        printf("\n+---------------------------------------------------------------------------+\n");
+        printf("\n%s+---------------------------------------------------------------------------+\n", CLR(ANSI_BWHITE));
         printf(  "| DICA: Digite '0' a qualquer momento para mostrar status do herói/oponente |\n");
-        printf(  "+---------------------------------------------------------------------------+\n\n");
+        printf(  "+---------------------------------------------------------------------------+%s\n\n", CLR(ANSI_RESET));
         
         shopInteraction(&gs, gs.currentFloor);
         
@@ -1459,7 +1626,8 @@ int main() {
         
         updatesHighscores(&gs, highscores);
         
-        printf("[1] Jogar novamente\n[2] Highscores\n[3] Sair do jogo\n");
+        printf("%s[1]%s Jogar novamente\n%s[2]%s Highscores\n%s[3]%s Sair do jogo\n", 
+               CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET));
         
         do {
             action = readInt();
@@ -1485,13 +1653,14 @@ int main() {
                     readString(confirm, STR_LENGTH);
                     if (tolower((unsigned char)confirm[0]) != 's' && tolower((unsigned char)confirm[0]) != 'y') {
                         action = 0;
-                        printf("\n[1] Jogar novamente\n[2] Highscores\n[3] Sair do jogo\n");
+                        printf("\n%s[1]%s Jogar novamente\n%s[2]%s Highscores\n%s[3]%s Sair do jogo\n", 
+                               CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET));
                     }
                     break;
                 }
                     
                 default:
-                    printf("> Comando não encontrado.\n\n");
+                    printf("> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                     break;
             }
         } while((action != 1) && (action != 3));
