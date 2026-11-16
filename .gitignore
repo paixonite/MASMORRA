@@ -1,7 +1,7 @@
 MASMORRA
+masmorra
 *.bin
 *.exe
 *.sh
 ARCHITECTURE.md
-AGENTS.md
 .gitignore
