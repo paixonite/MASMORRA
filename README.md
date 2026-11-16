@@ -1,49 +1,48 @@
 # MASMORRA
 
-A classic terminal *Dungeon Crawler* encapsulated in a monolithic C file.
+[![Language: C](https://img.shields.io/badge/language-C-blue.svg)](#03-quick-start)
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-zero%20(stdlib)-brightgreen.svg)](#03-quick-start)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](#03-quick-start)
+[![Terminal ANSI](https://img.shields.io/badge/ANSI-256%20%7C%2016%20%7C%20Mono-yellow.svg)](#05-cli--environment)
+
+A classic turn-based terminal *Dungeon Crawler* encapsulated in a single monolithic C file—zero external dependencies, cross-platform builds, runtime ANSI color detection, 5 dungeon floors, shop upgrades, mimic ambushes, and three endings.
 
 ![MASMORRA](assets/masmorra_title.gif)
 
-## 🚀 How to Play
+## Quick Start
 
-You can jump right into the dungeon by downloading the pre-compiled binary for your system, or compile it from source if you prefer!
+### Download & Play (Recommended)
 
-### 📥 Download & Play (Recommended)
+Grab a pre-compiled binary from the [Releases page](https://github.com/paixonite/MASMORRA/releases):
 
-1. Go to the [Releases page](https://github.com/paixonite/MASMORRA/releases) of this repository.
-2. Download the correct file for your operating system:
-   - **Windows:** Download `masmorra_windows.exe` and simply double-click it (or run it via cmd/PowerShell).
-   - **Linux:** Download the `masmorra_linux` binary. Open your terminal, grant execution permissions, and run it:
-     ```bash
-     chmod +x masmorra
-     ./masmorra
-     ```
-     
-### 🛠️ Compiling from Source
+- **Windows:** Download `masmorra_windows.exe` and double-click it (or run it from Command Prompt / PowerShell).
+- **Linux:** Download `masmorra_linux`, make it executable, and run it:
 
-Since the project has zero external dependencies and is structured in a single file, compilation is instant. You only need an installed C compiler (such as GCC).
+```bash
+chmod +x masmorra_linux
+./masmorra_linux
+```
+
+### Compile from Source
+
+Compilation is instant with any standard C compiler (`gcc`, `clang`, or MinGW):
 
 #### Linux / macOS
+
 ```bash
-# Clone the repository
-git clone [https://github.com/paixonite/MASMORRA.git](https://github.com/paixonite/MASMORRA.git)
+git clone https://github.com/paixonite/MASMORRA.git
 cd MASMORRA
-
-# Compile
 gcc MASMORRA.c -o masmorra -Wall
-
-# Play
 ./masmorra
 ```
 
-#### Windows
-If you are using MinGW, the command in the terminal (or PowerShell) is very similar:
+#### Windows (MinGW)
 
 ```cmd
-gcc MASMORRA.c -o masmorra.exe
+gcc MASMORRA.c -o masmorra.exe -Wall
 masmorra.exe
 ```
 
-## 👤 Author
+## Author
 
 - **Vítor Paixão** - [https://github.com/paixonite](https://github.com/paixonite)
