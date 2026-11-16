@@ -16,6 +16,7 @@
 #define STR_LENGTH 30 
 #define HIGHSCORES_NUM 11
 #define XAOPAI 15
+#define MAX_POTIONS 3
 
 // Cross-platform screen clear and terminal animation macros
 #ifdef _WIN32
@@ -398,15 +399,16 @@ void initGameData(GameState *gs) {
     gs->monsters[14].coins = rand() % 91 + 200;
 
     strcpy(gs->monsters[XAOPAI].name, "XÃOPAI");
-    gs->monsters[XAOPAI].atk = 10;
-    gs->monsters[XAOPAI].def = 0;
+    gs->monsters[XAOPAI].maxHp = 720;
+    gs->monsters[XAOPAI].atk = 82;
+    gs->monsters[XAOPAI].def = 25;
 
     // Initialize Shops
     strcpy(gs->shops[0].item1Name, "Bastão de madeira");
     gs->shops[0].item1atkPoints = 20;
     gs->shops[0].item1Price = 100;
     strcpy(gs->shops[0].item2Name, "Escudo pequeno de madeira");
-    gs->shops[0].item2defPoints = 10;
+    gs->shops[0].item2defPoints = 15;
     gs->shops[0].item2Price = 100;
 
     strcpy(gs->shops[1].item1Name, "Espada curta de cobre");
@@ -438,10 +440,10 @@ void initGameData(GameState *gs) {
     gs->shops[4].item2Price = 400;
 
     strcpy(gs->shops[5].item1Name, "Excalibur Lendária");
-    gs->shops[5].item1atkPoints = 80;
-    gs->shops[5].item1Price = 550;
+    gs->shops[5].item1atkPoints = 85;
+    gs->shops[5].item1Price = 500;
     strcpy(gs->shops[5].item2Name, "Égide Mítica");
-    gs->shops[5].item2defPoints = 150;
+    gs->shops[5].item2defPoints = 65;
     gs->shops[5].item2Price = 500;
 }
 
@@ -828,9 +830,20 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
         printf("> Você derrotou %s%s%s!\n> Você encontrou %s%i moedas%s!\n", 
                CLR(ANSI_BRED), gs->monsters[monsterCode].name, CLR(ANSI_RESET), CLR(ANSI_BYELLOW), eliteCoins, CLR(ANSI_RESET));
         if (rand() % 10 < 4) {
-            gs->hero.potions++;
-            printf("> O monstro elite derrubou uma %spoção de cura%s! %s(Você tem %i)%s\n\n", 
-                   CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
+            if (gs->hero.potions < MAX_POTIONS) {
+                gs->hero.potions++;
+                printf("> O monstro elite derrubou uma %spoção de cura%s! %s(Você tem %i)%s\n\n", 
+                       CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
+            } else if (gs->hero.hp < gs->hero.maxHp) {
+                int heal = gs->hero.maxHp / 2;
+                if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
+                gs->hero.hp += heal;
+                printf("> O monstro elite derrubou uma %spoção de cura%s! Como sua bolsa está cheia, você a bebeu na hora e recuperou %s%i de vida%s!\n\n",
+                       CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_BGREEN), heal, CLR(ANSI_RESET));
+            } else {
+                printf("> O monstro elite derrubou uma poção de cura, mas sua bolsa já está cheia %s(x%i)(max)%s!\n\n",
+                       CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
+            }
         } else {
             printf("\n");
         }
@@ -846,25 +859,41 @@ bool monsterInteraction(GameState *gs, int monsterCode) {
 
 // ================= [ EVENTS & SHOPS ] ====================================== //
 
-void printShopBox(GameState *gs, int shopCode, bool item1Available, bool item2Available) {
+void printShopBox(GameState *gs, int shopCode, bool item1Available, bool item2Available, bool pendantAvailable) {
     printf("%s+----------------- [ %sLOJA%s%s ] -----------------+%s\n", CLR(ANSI_YELLOW), CLR(ANSI_BYELLOW), CLR(ANSI_RESET), CLR(ANSI_YELLOW), CLR(ANSI_RESET));
     printf("%s|%s   Moedas: %s%i%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BYELLOW), gs->hero.coins, CLR(ANSI_RESET));
     printf("%s+--------------------------------------------+%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET));
     printf("%s|%s   %s[1]%s Sair da loja\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET));
     if (item1Available) {
         printf("%s|%s   %s[2]%s %s - %s$%i%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), gs->shops[shopCode].item1Name, CLR(ANSI_BYELLOW), gs->shops[shopCode].item1Price, CLR(ANSI_RESET));
+    } else if (shopCode == 5 && strcmp(gs->hero.atkItem, gs->shops[shopCode].item1Name) != 0) {
+        printf("%s|%s   %s[2]%s %s%s - (Recolhido)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->shops[shopCode].item1Name, CLR(ANSI_RESET));
     } else {
         printf("%s|%s   %s[2]%s %s%s - (Comprado)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->shops[shopCode].item1Name, CLR(ANSI_RESET));
     }
     if (item2Available) {
         printf("%s|%s   %s[3]%s %s - %s$%i%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), gs->shops[shopCode].item2Name, CLR(ANSI_BYELLOW), gs->shops[shopCode].item2Price, CLR(ANSI_RESET));
+    } else if (shopCode == 5 && strcmp(gs->hero.defItem, gs->shops[shopCode].item2Name) != 0) {
+        printf("%s|%s   %s[3]%s %s%s - (Recolhido)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->shops[shopCode].item2Name, CLR(ANSI_RESET));
     } else {
         printf("%s|%s   %s[3]%s %s%s - (Comprado)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->shops[shopCode].item2Name, CLR(ANSI_RESET));
     }
-    if (gs->currentFloor >= 1)
-        printf("%s|%s   %s[4]%s Poção de cura - %s$50%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
-    if (gs->currentFloor >= 2)
-        printf("%s|%s   %s[5]%s Pingente de vida - %s$100%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+    if (gs->currentFloor >= 1) {
+        if (gs->hero.potions == 0) {
+            printf("%s|%s   %s[4]%s Poção de cura - %s$50%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+        } else if (gs->hero.potions < MAX_POTIONS) {
+            printf("%s|%s   %s[4]%s Poção de cura - %s$50%s %s(x%i)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BYELLOW), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
+        } else {
+            printf("%s|%s   %s[4]%s %sPoção de cura - (x%i)(max)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
+        }
+    }
+    if (gs->currentFloor >= 2) {
+        if (pendantAvailable) {
+            printf("%s|%s   %s[5]%s Pingente de vida - %s$100%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+        } else {
+            printf("%s|%s   %s[5]%s %sPingente de vida - (Comprado)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), CLR(ANSI_RESET));
+        }
+    }
     if (gs->hero.potions > 0)
         printf("%s|%s   %s[6]%s Beber poção de cura %s(x%i)%s\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
     printf("%s+--------------------------------------------+%s\n\n", CLR(ANSI_YELLOW), CLR(ANSI_RESET));
@@ -873,8 +902,9 @@ void printShopBox(GameState *gs, int shopCode, bool item1Available, bool item2Av
 void shopInteraction(GameState *gs, int shopCode) {
     bool item1Available = true;
     bool item2Available = true;
+    bool pendantAvailable = true;
     
-    printShopBox(gs, shopCode, item1Available, item2Available);
+    printShopBox(gs, shopCode, item1Available, item2Available, pendantAvailable);
     
     int action;
     do {
@@ -883,7 +913,7 @@ void shopInteraction(GameState *gs, int shopCode) {
             case 0: // INFO
                 showsInfo(gs, NULL);
                 if (!hasPendingInput()) {
-                    printShopBox(gs, shopCode, item1Available, item2Available);
+                    printShopBox(gs, shopCode, item1Available, item2Available, pendantAvailable);
                 }
                 break;
                 
@@ -893,37 +923,51 @@ void shopInteraction(GameState *gs, int shopCode) {
             case 2: // BUYS ITEM 1
                 if ((item1Available == true) && (gs->hero.coins >= gs->shops[shopCode].item1Price)) {
                     strcpy(gs->hero.atkItem, gs->shops[shopCode].item1Name);
-                    printf("\n> Você comprou %s%s%s.\n\n", CLR(ANSI_BGREEN), gs->shops[shopCode].item1Name, CLR(ANSI_RESET));
+                    printf("\n> Você comprou %s%s%s.\n", CLR(ANSI_BGREEN), gs->shops[shopCode].item1Name, CLR(ANSI_RESET));
                     gs->hero.atk = gs->shops[shopCode].item1atkPoints;
                     item1Available = false;
                     gs->hero.coins -= gs->shops[shopCode].item1Price;
                     gs->score += gs->shops[shopCode].item1Price / 2;
+                    if (shopCode == 5) {
+                        item2Available = false;
+                        printf("> A lâmina sagrada ressoa em suas mãos! A criatura recolhe a Égide Mítica de volta para as sombras.\n\n");
+                    } else {
+                        printf("\n");
+                    }
                 } else {
                     printf("\n> %sImpossível realizar a ação.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 }
                 if (!hasPendingInput()) {
-                    printShopBox(gs, shopCode, item1Available, item2Available);
+                    printShopBox(gs, shopCode, item1Available, item2Available, pendantAvailable);
                 }
                 break;
                 
             case 3: // BUYS ITEM 2
                 if ((item2Available == true) && (gs->hero.coins >= gs->shops[shopCode].item2Price)) {
                     strcpy(gs->hero.defItem, gs->shops[shopCode].item2Name);
-                    printf("\n> Você comprou %s%s%s.\n\n", CLR(ANSI_BGREEN), gs->shops[shopCode].item2Name, CLR(ANSI_RESET));
+                    printf("\n> Você comprou %s%s%s.\n", CLR(ANSI_BGREEN), gs->shops[shopCode].item2Name, CLR(ANSI_RESET));
                     gs->hero.def = gs->shops[shopCode].item2defPoints;
                     item2Available = false;
                     gs->hero.coins -= gs->shops[shopCode].item2Price;
                     gs->score += gs->shops[shopCode].item2Price / 2;
+                    if (shopCode == 5) {
+                        item1Available = false;
+                        printf("> O escudo divino reluz diante da escuridão! A criatura recolhe a Excalibur Lendária de volta para as sombras.\n\n");
+                    } else {
+                        printf("\n");
+                    }
                 } else {
                     printf("\n> %sImpossível realizar a ação.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 }
                 if (!hasPendingInput()) {
-                    printShopBox(gs, shopCode, item1Available, item2Available);
+                    printShopBox(gs, shopCode, item1Available, item2Available, pendantAvailable);
                 }
                 break;
                 
             case 4: // BUYS POTION
-                if ((gs->hero.coins >= 50) && (gs->currentFloor >= 1)) {
+                if (gs->currentFloor >= 1 && gs->hero.potions >= MAX_POTIONS) {
+                    printf("\n> %sVocê só consegue carregar no máximo %i poções na bolsa!%s\n\n", CLR(ANSI_BYELLOW), MAX_POTIONS, CLR(ANSI_RESET));
+                } else if ((gs->hero.coins >= 50) && (gs->currentFloor >= 1)) {
                     gs->hero.potions++;
                     gs->hero.coins -= 50;
                     gs->score += 20;
@@ -934,12 +978,13 @@ void shopInteraction(GameState *gs, int shopCode) {
                     printf("\n> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 }
                 if (!hasPendingInput()) {
-                    printShopBox(gs, shopCode, item1Available, item2Available);
+                    printShopBox(gs, shopCode, item1Available, item2Available, pendantAvailable);
                 }
                 break;
                 
             case 5: // BUYS PENDANT
-                if (gs->hero.coins >= 100 && gs->currentFloor >= 2) {
+                if (pendantAvailable && gs->hero.coins >= 100 && gs->currentFloor >= 2) {
+                    pendantAvailable = false;
                     gs->hero.coins -= 100;
                     gs->hero.maxHp += 50;
                     gs->hero.hp += 50;
@@ -952,7 +997,7 @@ void shopInteraction(GameState *gs, int shopCode) {
                     printf("\n> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 }
                 if (!hasPendingInput()) {
-                    printShopBox(gs, shopCode, item1Available, item2Available);
+                    printShopBox(gs, shopCode, item1Available, item2Available, pendantAvailable);
                 }
                 break;
                 
@@ -970,14 +1015,14 @@ void shopInteraction(GameState *gs, int shopCode) {
                     printf("\n> %sImpossível realizar a ação.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 }
                 if (!hasPendingInput()) {
-                    printShopBox(gs, shopCode, item1Available, item2Available);
+                    printShopBox(gs, shopCode, item1Available, item2Available, pendantAvailable);
                 }
                 break;
                 
             default:
                 printf("\n> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 if (!hasPendingInput()) {
-                    printShopBox(gs, shopCode, item1Available, item2Available);
+                    printShopBox(gs, shopCode, item1Available, item2Available, pendantAvailable);
                 }
                 break;
         }
@@ -1030,8 +1075,10 @@ void shopDialog(GameState *gs) {
 
         case 5:
             printf("> Você encontra uma hedionda figura de carne e tentáculos.\n");
+            printf("> Em seus tentáculos repousam a %sExcalibur Lendária%s e a %sÉgide Mítica%s — apenas uma poderá ser escolhida.\n",
+                   CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET));
             printf("%sCriatura:%s %s(A criatura encara os mais obscuros cantos da sua alma)%s\n", CLR(ANSI_BYELLOW), CLR(ANSI_RESET), CLR(ANSI_DIM), CLR(ANSI_RESET));
-            printf("%s(Você se sente extremamente desconfortável enquanto compra)%s\n\n", CLR(ANSI_DIM), CLR(ANSI_RESET));
+            printf("%s(Você se sente extremamente desconfortável enquanto negocia)%s\n\n", CLR(ANSI_DIM), CLR(ANSI_RESET));
             break;
     }
 }
@@ -1295,64 +1342,71 @@ bool mimicInteraction(GameState *gs, bool *chestOpened) {
 }
 
 bool xaopaiInteraction(GameState *gs) {
-    printf("> Você desafia o terrível %sXãopai%s!\n\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
+    printf("> Você desafia o terrível %sXãopai%s!\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
+    bool hasExcalibur = (strcmp(gs->hero.atkItem, "Excalibur Lendária") == 0);
+    bool hasEgide = (strcmp(gs->hero.defItem, "Égide Mítica") == 0);
+
+    if (hasExcalibur) {
+        printf("> %sA Excalibur Lendária brilha intensamente em suas mãos, pronta para cortar as trevas!%s\n\n",
+               CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+    } else if (hasEgide) {
+        printf("> %sA Égide Mítica irradia uma barreira divina ao seu redor, refletindo a aura maligna!%s\n\n",
+               CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+    } else {
+        printf("> %sSuas armas comuns tremem diante da pressão esmagadora do espírito ancestral...%s\n\n",
+               CLR(ANSI_BRED), CLR(ANSI_RESET));
+    }
+
     gs->monsters[XAOPAI].hp = gs->monsters[XAOPAI].maxHp;
-    
+    bool isCharged = false;
+    bool phase2 = false;
+    int turnsSinceCharge = 0;
+
     do {
         printf("%s[1]%s Atacar\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
-        printf("%s[2]%s Fugir\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+        printf("%s[2]%s Defender\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
         if (gs->hero.potions > 0)
             printf("%s[3]%s Usar poção de cura %s(x%i)%s\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
+        printf("%s[4]%s Fugir\n", CLR(ANSI_BCYAN), CLR(ANSI_RESET));
+
         int action = readInt();
-        switch(action) {
+        bool bossTurn = false;
+        bool defending = false;
+
+        switch (action) {
             case 0: // INFO
                 showsInfo(gs, &gs->monsters[XAOPAI]);
                 break;
 
             case 1: { // ATTACK
-                int heroDamage = rollStat(gs->hero.atk);
-                bool isCrit = (rand() % 10 == 0);
-                if (isCrit) {
-                    heroDamage = (heroDamage * 3 + 1) / 2;
-                    printf("\n> %sGOLPE CRÍTICO%s! Você atacou %sXÃOPAI%s com %s causando %s%i de dano%s!\n", 
-                           CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), gs->hero.atkItem, CLR(ANSI_BGREEN), heroDamage, CLR(ANSI_RESET));
+                bossTurn = true;
+                int effectiveBossDef = hasExcalibur ? (gs->monsters[XAOPAI].def * 2) / 5 : gs->monsters[XAOPAI].def;
+                int heroDamage = rollStat(gs->hero.atk) - rollStat(effectiveBossDef);
+
+                if (heroDamage <= 0) {
+                    printf("\n> Você atacou %sXÃOPAI%s com %s, mas a aura sombria %sabsorveu o golpe%s!\n",
+                           CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), gs->hero.atkItem, CLR(ANSI_BRED), CLR(ANSI_RESET));
                 } else {
-                    printf("\n> Você atacou %sXÃOPAI%s com %s causando %s%i de dano%s!\n", 
-                           CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), gs->hero.atkItem, CLR(ANSI_BGREEN), heroDamage, CLR(ANSI_RESET));
-                }
-                gs->monsters[XAOPAI].hp -= heroDamage;
-                if (gs->monsters[XAOPAI].hp > 0) {
-                    int xaopaiDamage = rollStat(gs->monsters[XAOPAI].atk);
-                    gs->hero.hp -= xaopaiDamage;
-                    printf("> %sXÃOPAI%s revidou com poder sombrio causando %s%i de dano%s!\n\n", 
-                           CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), xaopaiDamage, CLR(ANSI_RESET));
-                    if (gs->hero.hp <= 0) {
-                        clearScreen();
-                        printf("%sVOCÊ PERECEU DIANTE DE %sXÃOPAI%s.%s\n\a", CLR(ANSI_BRED), CLR(ANSI_BMAGENTA), CLR(ANSI_BRED), CLR(ANSI_RESET));
-                        printf("Pontuação: %s%i%s\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
-                        return true;
+                    bool isCrit = hasExcalibur ? (rand() % 4 == 0) : (rand() % 10 == 0);
+                    if (isCrit) {
+                        heroDamage = (heroDamage * 3 + 1) / 2;
+                        printf("\n> %sGOLPE CRÍTICO%s! Você atacou %sXÃOPAI%s com %s causando %s%i de dano%s!\n",
+                               CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), gs->hero.atkItem, CLR(ANSI_BGREEN), heroDamage, CLR(ANSI_RESET));
+                    } else {
+                        printf("\n> Você atacou %sXÃOPAI%s com %s causando %s%i de dano%s!\n",
+                               CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), gs->hero.atkItem, CLR(ANSI_BGREEN), heroDamage, CLR(ANSI_RESET));
                     }
+                    gs->monsters[XAOPAI].hp -= heroDamage;
                 }
                 break;
             }
 
-            case 2: { // FLEE
-                if (rand() % 10 == 0) {
-                    gs->fledXaopai = true;
-                    return false;
-                }
-                printf("\n> %sNão há como fugir do poder avassalador de XÃOPAI!%s\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
-                int xaopaiDamage = rollStat(gs->monsters[XAOPAI].atk);
-                gs->hero.hp -= xaopaiDamage;
-                printf("> %sXÃOPAI%s te pune pela covardia causando %s%i de dano%s!\n\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), xaopaiDamage, CLR(ANSI_RESET));
-                if (gs->hero.hp <= 0) {
-                    clearScreen();
-                    printf("%sVOCÊ PERECEU TENTANDO FUGIR DE %sXÃOPAI%s.%s\n\a", CLR(ANSI_BRED), CLR(ANSI_BMAGENTA), CLR(ANSI_BRED), CLR(ANSI_RESET));
-                    printf("Pontuação: %s%i%s\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
-                    return true;
-                }
+            case 2: // DEFEND
+                bossTurn = true;
+                defending = true;
+                printf("\n> Você firma os pés e ergue sua guarda com %s%s%s!\n",
+                       CLR(ANSI_BCYAN), gs->hero.defItem, CLR(ANSI_RESET));
                 break;
-            }
 
             case 3: // POTION
                 if (gs->hero.potions <= 0) {
@@ -1364,16 +1418,154 @@ bool xaopaiInteraction(GameState *gs) {
                     int heal = gs->hero.maxHp / 2;
                     if (gs->hero.hp + heal > gs->hero.maxHp) heal = gs->hero.maxHp - gs->hero.hp;
                     gs->hero.hp += heal;
-                    printf("\n> Você bebeu uma poção de cura e recuperou %s%i de vida%s! %s(Restam: %i)%s\n\n", 
+                    printf("\n> Você bebeu uma poção de cura e recuperou %s%i de vida%s! %s(Restam: %i)%s\n\n",
                            CLR(ANSI_BGREEN), heal, CLR(ANSI_RESET), CLR(ANSI_DIM), gs->hero.potions, CLR(ANSI_RESET));
                 }
                 break;
+
+            case 4: { // FLEE
+                if (rand() % 10 == 0) {
+                    gs->fledXaopai = true;
+                    return false;
+                }
+                bossTurn = true;
+                printf("\n> %sNão há como fugir do poder avassalador de XÃOPAI!%s\n", CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
+                break;
+            }
 
             default:
                 printf("> %sComando não encontrado.%s\n\n", CLR(ANSI_BRED), CLR(ANSI_RESET));
                 break;
         }
-    } while(gs->monsters[XAOPAI].hp > 0);
+
+        // Boss turn execution
+        if (bossTurn && gs->monsters[XAOPAI].hp > 0) {
+            bool wasCharged = isCharged;
+            if (isCharged) {
+                int rawBlast = rollStat((gs->monsters[XAOPAI].atk * 165) / 100);
+                isCharged = false;
+                turnsSinceCharge = 0;
+
+                if (defending) {
+                    if (hasEgide) {
+                        int xaopaiDamage = (rawBlast - rollStat(gs->hero.def)) / 3;
+                        if (xaopaiDamage < 12) xaopaiDamage = 12;
+                        gs->hero.hp -= xaopaiDamage;
+                        printf("> %sXÃOPAI%s dispara a %sEXPLOSÃO ABISSAL%s, mas a %sÉgide Mítica%s absorve o impacto (você sofreu %s%i de dano%s)!\n",
+                               CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BRED), xaopaiDamage, CLR(ANSI_RESET));
+
+                        if (gs->hero.hp > 0) {
+                            int reflected = rollStat(65);
+                            gs->monsters[XAOPAI].hp -= reflected;
+                            printf("> %sREFLEXO MÍTICO%s! A Égide devolve a onda de choque contra %sXÃOPAI%s causando %s%i de dano%s!\n\n",
+                                   CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BGREEN), reflected, CLR(ANSI_RESET));
+                        } else {
+                            printf("\n");
+                        }
+                    } else if (hasExcalibur) {
+                        int xaopaiDamage = (rawBlast - rollStat(gs->hero.def)) / 3;
+                        if (xaopaiDamage < 16) xaopaiDamage = 16;
+                        gs->hero.hp -= xaopaiDamage;
+                        printf("> %sXÃOPAI%s dispara a %sEXPLOSÃO ABISSAL%s! Você apara o feixe com a %sExcalibur Lendária%s (sofrendo %s%i de dano%s)!\n",
+                               CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), CLR(ANSI_RESET), CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BRED), xaopaiDamage, CLR(ANSI_RESET));
+
+                        if (gs->hero.hp > 0) {
+                            int counter = rollStat(gs->hero.atk) - rollStat(gs->monsters[XAOPAI].def / 2);
+                            if (counter < 1) counter = 1;
+                            gs->monsters[XAOPAI].hp -= counter;
+                            printf("> %sCONTRA-ATAQUE SAGRADO%s! Você avança pelo feixe partido e golpeia %sXÃOPAI%s causando %s%i de dano%s!\n\n",
+                                   CLR(ANSI_BGREEN), CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BGREEN), counter, CLR(ANSI_RESET));
+                        } else {
+                            printf("\n");
+                        }
+                    } else {
+                        int xaopaiDamage = ((rawBlast - rollStat(gs->hero.def)) * 3) / 5;
+                        if (xaopaiDamage < 35) xaopaiDamage = 35;
+                        gs->hero.hp -= xaopaiDamage;
+                        printf("> %sXÃOPAI%s dispara a %sEXPLOSÃO ABISSAL%s! Seu escudo comum mal suporta o impacto, causando %s%i de dano%s!\n",
+                               CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), CLR(ANSI_RESET), CLR(ANSI_BRED), xaopaiDamage, CLR(ANSI_RESET));
+                        printf("> %sO choque colossal adormece seus braços, impedindo qualquer contra-ataque!%s\n\n",
+                               CLR(ANSI_DIM), CLR(ANSI_RESET));
+                    }
+                } else {
+                    int xaopaiDamage = rawBlast - (rollStat(gs->hero.def) / 2);
+                    if (xaopaiDamage < 45) xaopaiDamage = 45;
+                    gs->hero.hp -= xaopaiDamage;
+                    printf("> %sEXPLOSÃO ABISSAL%s! %sXÃOPAI%s descarrega toda a energia acumulada em cheio, causando %s%i de dano devastador%s!\n\n",
+                           CLR(ANSI_BRED), CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), xaopaiDamage, CLR(ANSI_RESET));
+                }
+            } else {
+                int xaopaiDamage = rollStat(gs->monsters[XAOPAI].atk) - rollStat(gs->hero.def);
+                if (xaopaiDamage < 5) xaopaiDamage = 5;
+
+                if (defending) {
+                    xaopaiDamage = (xaopaiDamage + 1) / 2;
+                    if (xaopaiDamage < 5) xaopaiDamage = 5;
+                    gs->hero.hp -= xaopaiDamage;
+                    printf("> %sXÃOPAI%s atacou com garras de sombra, mas sua postura defensiva reduziu o impacto para %s%i de dano%s!\n\n",
+                           CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), xaopaiDamage, CLR(ANSI_RESET));
+                } else {
+                    gs->hero.hp -= xaopaiDamage;
+                    printf("> %sXÃOPAI%s revidou com poder sombrio causando %s%i de dano%s!\n",
+                           CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), xaopaiDamage, CLR(ANSI_RESET));
+
+                    if (gs->hero.hp > 0 && hasEgide && action == 1) {
+                        int passiveReflect = rollStat(16);
+                        gs->monsters[XAOPAI].hp -= passiveReflect;
+                        printf("> A luz da %sÉgide Mítica%s queima %sXÃOPAI%s no choque, refletindo %s%i de dano%s!\n",
+                               CLR(ANSI_BCYAN), CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BGREEN), passiveReflect, CLR(ANSI_RESET));
+                    }
+
+                    if (gs->hero.hp > 0 && gs->monsters[XAOPAI].hp > 0 && phase2 && (rand() % 10 < 3)) {
+                        int drain = xaopaiDamage / 2;
+                        if (drain < 1) drain = 1;
+                        gs->monsters[XAOPAI].hp += drain;
+                        if (gs->monsters[XAOPAI].hp > gs->monsters[XAOPAI].maxHp) {
+                            gs->monsters[XAOPAI].hp = gs->monsters[XAOPAI].maxHp;
+                        }
+                        printf("> %sDRENO DE ALMA%s! %sXÃOPAI%s absorve sua força vital e regenera %s%i de vida%s!\n",
+                               CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BMAGENTA), CLR(ANSI_RESET), CLR(ANSI_BRED), drain, CLR(ANSI_RESET));
+                    }
+                    printf("\n");
+                }
+            }
+
+            if (gs->hero.hp <= 0) {
+                clearScreen();
+                if (action == 4) {
+                    printf("%sVOCÊ PERECEU TENTANDO FUGIR DE %sXÃOPAI%s.%s\n\a", CLR(ANSI_BRED), CLR(ANSI_BMAGENTA), CLR(ANSI_BRED), CLR(ANSI_RESET));
+                } else {
+                    printf("%sVOCÊ PERECEU DIANTE DE %sXÃOPAI%s.%s\n\a", CLR(ANSI_BRED), CLR(ANSI_BMAGENTA), CLR(ANSI_BRED), CLR(ANSI_RESET));
+                }
+                printf("Pontuação: %s%i%s\n", CLR(ANSI_BYELLOW), gs->score, CLR(ANSI_RESET));
+                return true;
+            }
+
+            // Phase 2 transition or 3-turn charge telegraph
+            if (gs->monsters[XAOPAI].hp > 0) {
+                if (!phase2 && gs->monsters[XAOPAI].hp <= gs->monsters[XAOPAI].maxHp / 2) {
+                    phase2 = true;
+                    gs->monsters[XAOPAI].atk = 94;
+                    isCharged = true;
+                    turnsSinceCharge = 0;
+                    printf("> %sO corpo de XÃOPAI se desfaz em chamas negras! SEUS OLHOS BRILHAM EM FÚRIA ABISSAL!%s\n",
+                           CLR(ANSI_BRED), CLR(ANSI_RESET));
+                    printf("%sXÃOPAI: VOCÊ JAMAIS SAIRÁ VIVO DESTE TEMPLO! (O ataque de XÃOPAI aumentou!)%s\n",
+                           CLR(ANSI_BMAGENTA), CLR(ANSI_RESET));
+                    printf("> %s[!] XÃOPAI ergue os braços e concentra uma esfera de energia abissal!%s\n\n",
+                           CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+                } else if (!wasCharged) {
+                    turnsSinceCharge++;
+                    if (turnsSinceCharge >= 3) {
+                        isCharged = true;
+                        turnsSinceCharge = 0;
+                        printf("> %s[!] XÃOPAI ergue os braços e concentra uma esfera de energia abissal!%s\n\n",
+                               CLR(ANSI_BYELLOW), CLR(ANSI_RESET));
+                    }
+                }
+            }
+        }
+    } while (gs->monsters[XAOPAI].hp > 0);
 
     gs->score += 10000;
     printf("> %sVOCÊ DERROTOU O ESPÍRITO DE %sXÃOPAI%s!%s\n\n", CLR(ANSI_BGREEN), CLR(ANSI_BMAGENTA), CLR(ANSI_BGREEN), CLR(ANSI_RESET));
@@ -1541,7 +1733,6 @@ void playDungeon(GameState *gs) {
     clearScreen();
     dungeonDialog(gs);
     printsXaopai();
-    gs->monsters[XAOPAI].maxHp = 1750 - gs->hero.def * 3;
     gs->isDead = xaopaiInteraction(gs);
     
     if (gs->isDead)
