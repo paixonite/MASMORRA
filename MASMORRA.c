@@ -711,7 +711,7 @@ void printShopBox(GameState *gs, int shopCode, bool item1Available, bool item2Av
     if (gs->currentFloor >= 1)
         printf("|   [4] Poção de cura - $50\n");
     if (gs->currentFloor >= 2)
-        printf("|   [5] Pingente de vida - $150\n");
+        printf("|   [5] Pingente de vida - $100\n");
     if (gs->hero.potions > 0)
         printf("|   [6] Beber poção de cura (x%i)\n", gs->hero.potions);
     printf("+--------------------------------------------+\n\n");
@@ -786,8 +786,8 @@ void shopInteraction(GameState *gs, int shopCode) {
                 break;
                 
             case 5: // BUYS PENDANT
-                if (gs->hero.coins >= 150 && gs->currentFloor >= 2) {
-                    gs->hero.coins -= 150;
+                if (gs->hero.coins >= 100 && gs->currentFloor >= 2) {
+                    gs->hero.coins -= 100;
                     gs->hero.maxHp += 50;
                     gs->hero.hp += 50;
                     gs->score += 150;
