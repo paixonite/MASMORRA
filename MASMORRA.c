@@ -941,33 +941,33 @@ void dungeonDialog(GameState *gs) {
 }
 
 void printsBadEnding(GameState *gs) {
-    printf("Você toma o amuleto para si.\n");
-    printf("Você absorve o poder do amuleto, e consegue sentir a escuridão fluir pelo seu corpo.\n");
-    printf("Você tenta resistir à magia, mas ela te domina e você acaba perdendo sua noção \nda realidade.\n");
-    printf("O que restou de você agora reinará no trono como %c nov%c Xãopai.\n", gs->pronoum, gs->pronoum);
+    printf("> Você toma o amuleto para si.\n");
+    printf("> Você absorve o poder do amuleto, e consegue sentir a escuridão fluir pelo seu corpo.\n");
+    printf("> Você tenta resistir à magia, mas ela te domina e você acaba perdendo sua noção \nda realidade.\n");
+    printf("> O que restou de você agora reinará no trono como %c nov%c Xãopai.\n", gs->pronoum, gs->pronoum);
     printf("|FINAL RUIM|\n");
 }
 
 void printsGoodEnding() {
-    printf("Você destrói o amuleto.\n");
-    printf("Você ouve um estridente ruído vindo do amuleto enquanto vê toda a energia maligna \nse dissipar no ar.\n");
-    printf("Você finalmente libertou a masmorra e os habitantes da cidade das \nmãos do mal!\n");
+    printf("> Você destrói o amuleto.\n");
+    printf("> Você ouve um estridente ruído vindo do amuleto enquanto vê toda a energia maligna \nse dissipar no ar.\n");
+    printf("> Você finalmente libertou a masmorra e os habitantes da cidade das \nmãos do mal!\n");
     printf("|FINAL BOM|\n");
 }
 
 void printsTrueEnding(GameState *gs) {
-    printf("Você recita a sequência mágica ao amuleto.\n");
-    printf("O amuleto brilha em luz vermelha ofuscante enquanto muda sua forma para um esbelto garoto.\n");
-    printf("Paixão: Uh... Onde eu estou? Eu estava programando um jogo e... acho que dormi no teclado.\n");
-    printf("Paixão: Vem, %s, vamo dar um fora daqui. Ficar encarando essa tela de terminal \ntá me dando dor de cabeça...\n", gs->hero.name);
+    printf("> Você recita a sequência mágica ao amuleto.\n");
+    printf("> O amuleto brilha em luz vermelha ofuscante enquanto muda sua forma para um esbelto garoto.\n");
+    printf("> Paixão: Uh... Onde eu estou? Eu estava programando um jogo e... acho que dormi no teclado.\n");
+    printf("> Paixão: Vem, %s, vamo dar um fora daqui. Ficar encarando essa tela de terminal \ntá me dando dor de cabeça...\n", gs->hero.name);
     printf("|FINAL VERDADEIRO|\n");
 }
 
 void printsCowardEnding(GameState *gs) {
     printf("\n> Por um milagre do destino, você encontra uma brecha e consegue escapar de XÃOPAI!\n");
-    printf("Você corre desesperadamente escadaria acima sem olhar para trás, abandonando a masmorra.\n");
-    printf("A cidade acima eventualmente sucumbe à escuridão, mas pelo menos você salvou a própria pele...\n");
-    printf("Você sobreviveu, mas será para sempre lembrad%c como %c maior covarde da história, %s.\n", 
+    printf("> Você corre desesperadamente escadaria acima sem olhar para trás, abandonando a masmorra.\n");
+    printf("> A cidade acima eventualmente sucumbe à escuridão, mas pelo menos você salvou a própria pele...\n");
+    printf("> Você sobreviveu, mas será para sempre lembrad%c como %c maior covarde da história, %s.\n", 
            gs->pronoum, gs->pronoum, gs->hero.name);
     printf("|FINAL COVARDE|\n");
     printf("Pontuação: %i\n\n", gs->score);
@@ -1222,10 +1222,10 @@ bool xaopaiInteraction(GameState *gs) {
 }
 
 void ending(GameState *gs) {
-    printf("Você atravessa a fera com a sua espada e ela é reduzida à poeira e cinzas.\n");
-    printf("Você apanha um amuleto vermelho-sangue em meio aos restos da criatura\n");
-    printf("O amuleto pulsa vigorosamente em suas mãos. Você pode sentir um imenso poder \nsaindo dele.\n");
-    printf("O que você faz?\n");
+    printf("> Você atravessa a fera com a sua espada e ela é reduzida à poeira e cinzas.\n");
+    printf("> Você apanha um amuleto vermelho-sangue em meio aos restos da criatura\n");
+    printf("> O amuleto pulsa vigorosamente em suas mãos. Você pode sentir um imenso poder \nsaindo dele.\n");
+    printf("> O que você faz?\n");
     printf("[1] Inspecionar amuleto\n");
     printf("[2] Se apossar do amuleto de Xãopai\n");
     printf("[3] Destruir o amuleto de Xãopai\n");
