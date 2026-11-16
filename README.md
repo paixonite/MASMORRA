@@ -1,9 +1,11 @@
 # MASMORRA
 
-[![Language: C](https://img.shields.io/badge/language-C-blue.svg)](#03-quick-start)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-zero%20(stdlib)-brightgreen.svg)](#03-quick-start)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](#03-quick-start)
-[![Terminal ANSI](https://img.shields.io/badge/ANSI-256%20%7C%2016%20%7C%20Mono-yellow.svg)](#05-cli--environment)
+English | [Português](README-pt.md)
+
+[![Language: C](https://img.shields.io/badge/language-C-blue.svg)](#quick-start)
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-zero%20(stdlib)-brightgreen.svg)](#quick-start)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](#quick-start)
+[![Terminal ANSI](https://img.shields.io/badge/ANSI-256%20%7C%2016%20%7C%20Mono-yellow.svg)](#color-options)
 
 A classic turn-based terminal *Dungeon Crawler* encapsulated in a single monolithic C file—zero external dependencies, cross-platform builds, runtime ANSI color detection, 5 dungeon floors, shop upgrades, mimic ambushes, and three endings.
 
@@ -41,6 +43,15 @@ gcc MASMORRA.c -o masmorra -Wall
 ```cmd
 gcc MASMORRA.c -o masmorra.exe -Wall
 masmorra.exe
+```
+
+## Color Options
+
+Terminal colors are auto-detected at runtime with automatic monochrome fallback, and can be overridden with CLI flags:
+
+```bash
+./masmorra --color      # Force ANSI color output
+./masmorra --no-color   # Disable ANSI colors (monochrome mode)
 ```
 
 ## Author
