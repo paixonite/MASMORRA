@@ -2,6 +2,8 @@
 
 A classic terminal *Dungeon Crawler* encapsulated in a monolithic C file.
 
+![MASMORRA](assets/masmorra_title.gif)
+
 ## 🚀 How to Play
 
 You can jump right into the dungeon by downloading the pre-compiled binary for your system, or compile it from source if you prefer!
